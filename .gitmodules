@@ -1,0 +1,3 @@
+[submodule "SDLFramework"]
+	path = SDLFramework
+	url = https://github.com/Lauchmelder23/SDLFramework
