@@ -3,6 +3,84 @@
 
 #include "../util.hpp"
 
+///////////////// Internal values for opcodes //////////////////
+#pragma region Opcodes
+#define ADC 0x00
+#define AND	0x01
+#define ASL	0x02
+#define BCC	0x03
+#define BCS	0x04
+#define BEQ	0x05
+#define BIT	0x06
+#define BMI	0x07
+#define BNE	0x08
+#define BPL	0x09
+#define BRK	0x0A
+#define BVC	0x0B
+#define BVS	0x0C
+#define CLC	0x0D
+#define CLD	0x0E
+#define CLI	0x0F
+#define CLV	0x10
+#define CMP	0x11
+#define CPX	0x12
+#define CPY	0x13
+#define DEC	0x14
+#define DEX	0x15
+#define DEY	0x16
+#define EOR	0x17
+#define INC	0x18
+#define INX	0x19
+#define INY	0x1A
+#define JMP	0x1B
+#define JSR	0x1C
+#define LDA	0x1D
+#define LDX	0x1E
+#define LDY	0x1F
+#define LSR	0x20
+#define NOP	0x21
+#define ORA	0x22
+#define PHA	0x23
+#define PHP	0x24
+#define PLA	0x25
+#define PLP	0x26
+#define ROL	0x27
+#define ROR	0x28
+#define RTI	0x29
+#define RTS	0x2A
+#define SBC	0x2B
+#define SEC	0x2C
+#define SED	0x2D
+#define SEI	0x2E
+#define STA	0x2F
+#define STX	0x30
+#define STY	0x31
+#define TAX	0x32
+#define TAY	0x33
+#define TSX	0x34
+#define TXA	0x35
+#define TXS	0x36
+#define TYA	0x37
+#define UOP 0xFF
+#pragma endregion 
+
+///////////////// Internal values for addressing modes /////////////////
+#pragma region AddrModes
+#define IMP 0x00
+#define ACC 0x01
+#define IMM 0x02
+#define ZPG 0x03
+#define ABS 0x04
+#define REL 0x05
+#define IND 0x06
+#define ZPX 0x07
+#define ZPY 0x08
+#define ABX 0x09
+#define ABY 0x0A
+#define IDX 0x0B
+#define IDY 0x0C
+#pragma endregion
+
 class Bus;
 
 class Mos6502
@@ -20,13 +98,14 @@ public:
 		BYTE Negative : 1 = 1;
 	} Flags;
 
-	typedef std::function<BYTE()> AddressMode;
-	typedef std::function<BYTE()> Operation;
+	typedef BYTE AddressMode;
+	typedef BYTE Operation;
 
 	struct Instruction
 	{
-		Operation operation		= nullptr;
-		AddressMode addressMode = nullptr;
+		std::string name		= "";
+		Operation operation		= 0xFF;
+		AddressMode addressMode = 0xFF;
 		BYTE cycles = 0;
 	};
 
@@ -35,83 +114,6 @@ public:
 	~Mos6502();
 
 	void ConnectBus(Bus* bus) { m_pBus = bus; }
-
-#pragma region Addressing Modes
-	BYTE IMP();	// Implicit,	the destination is implied
-	BYTE IMM();	// Immediate,	the operand is the value
-	BYTE ZPG(); // Zero Page,	the value is at an 8-bit address on the zero page
-	BYTE ABS();	// Absolute,	the value is at an address in memory
-	BYTE REL(); // Relative,	8-bit signed offset from the PC
-	BYTE IND(); // Indirect,	an address is stored at the address of the operand
-	
-	BYTE ZPX(); // Zero page indexed
-	BYTE ZPY(); // Zero page indexed
-	BYTE ABX(); // Absolute indexed
-	BYTE ABY(); // Absolute indexed
-	BYTE IDX();	// Indexed indirect
-	BYTE IDY(); // Indirect indexed
-#pragma endregion
-
-#pragma region Opcodes
-	BYTE ADC(); // Add with carry
-	BYTE AND(); // Bitwise and
-	BYTE ASL(); // Arithmetic <<
-	BYTE BCC(); // Branch on carry clear
-	BYTE BCS(); // Branch on carry set
-	BYTE BEQ(); // Branch on zero set
-	BYTE BIT(); // Bit test (?)
-	BYTE BMI(); // Branch on negative set
-	BYTE BNE(); // Branch on zero clear
-	BYTE BPL(); // Branch on negative clear
-	BYTE BRK(); // Break / Interrupt
-	BYTE BVC(); // Branch on overflow clear
-	BYTE BVS(); // Branch on overflow set
-	BYTE CLC(); // Clear carry
-	BYTE CLD(); // Clear decimal
-	BYTE CLI(); // Clear interrupt disable
-	BYTE CLV(); // Clear overflow
-	BYTE CMP(); // Compare with accumulator
-	BYTE CPX(); // Compare with X
-	BYTE CPY(); // Compare with Y
-	BYTE DEC(); // Decrement
-	BYTE DEX(); // Decrement X
-	BYTE DEY(); // Decrement Y
-	BYTE EOR(); // XOR with accumulator
-	BYTE INC(); // Increment
-	BYTE INX(); // Increment X
-	BYTE INY(); // Increment Y
-	BYTE JMP(); // Jump
-	BYTE JSR(); // Jump subroutine
-	BYTE LDA(); // Load accumulator
-	BYTE LDX(); // Load X
-	BYTE LDY(); // Load Y
-	BYTE LSR(); // Logical >>
-	BYTE NOP(); // No operation
-	BYTE ORA(); // OR with accumulator
-	BYTE PHA(); // Push accumulator
-	BYTE PHP(); // Push status register
-	BYTE PLA(); // Pull accumulator
-	BYTE PLP(); // Pull status register
-	BYTE ROL(); // Rotate left
-	BYTE ROR(); // Rotate right
-	BYTE RTI(); // Return from interrupt
-	BYTE RTS(); // Return from subroutine
-	BYTE SBC(); // Subtract with carry
-	BYTE SEC(); // Set carry
-	BYTE SED(); // Set decimal
-	BYTE SEI(); // Set interrupt disable
-	BYTE STA(); // Store accumulator
-	BYTE STX(); // Store X
-	BYTE STY(); // Store Y
-	BYTE TAX(); // Transfer accumulator to X
-	BYTE TAY(); // Transfer accumulator to Y
-	BYTE TSX(); // Transfer SP to X
-	BYTE TXA(); // Transfer X to accumulator
-	BYTE TXS(); // Transfer X to SP
-	BYTE TYA(); // Transfer Y to accumulator
-
-	BYTE UOP(); // Unknown Opcode
-#pragma endregion
 	
 	void Tick();
 	void Reset();
@@ -122,6 +124,7 @@ private:
 	BYTE Read(WORD address);
 	void Write(WORD address, BYTE value);
 
+	bool Execute();
 	BYTE Fetch();
 
 private:
@@ -135,8 +138,7 @@ private:
 	WORD m_uPC;			// Program counter
 
 	BYTE m_uFetched;
-	WORD m_uAbsAddress;
-	int8_t m_nRelAddress;
+	bool m_bSwitchedPage;
 	BYTE m_uOpcode, m_uCycles;
 
 	std::vector<Instruction> m_vecLookup;

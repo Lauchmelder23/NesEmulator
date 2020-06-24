@@ -1,12 +1,14 @@
 #include "Mos6502.hpp"
 #include "Bus.hpp"
 
-#define MAKE(x, y, z) {std::bind(&Mos6502::x, this), std::bind(&Mos6502::y, this), z}
+#define MAKE(x, y, z) {#x, x, y, z}
+#define SERVE(x) return m_uFetched = x
+#define TO_WORD(lo, hi) ((static_cast<WORD>(hi) << 8) | lo)
 
 Mos6502::Mos6502() :
 	m_pBus(nullptr), m_oStatus(),
 	m_uAcc(0x00), m_uX(0x00), m_uY(0x00), m_uSP(0x00), m_uPC(0x0000),
-	m_uFetched(0x00), m_uAbsAddress(0x0000), m_nRelAddress(0x0000), m_uOpcode(0x00), m_uCycles(0x00)
+	m_uFetched(0x00), m_uOpcode(0x00), m_uCycles(0x00)
 {
 	m_vecLookup = 
 	{
@@ -306,173 +308,6 @@ Mos6502::~Mos6502()
 }
 
 
-/////////////////// ADDRESSING MODES ///////////////////////
-#pragma region
-
-BYTE Mos6502::IMP()
-{
-	m_uFetched = m_uAcc;
-	return 0;
-}
-
-BYTE Mos6502::IMM()
-{
-	m_uAbsAddress = m_uPC++;
-}
-
-BYTE Mos6502::ZPG()
-{
-	m_uAbsAddress = Read(m_uPC++);
-	m_uAbsAddress &= 0x00FF;
-	return 0;
-}
-
-BYTE Mos6502::ABS()
-{
-	WORD low = Read(m_uPC++);
-	WORD high = Read(m_uPC++);
-	m_uAbsAddress = (high << 8) | low;
-	return 0;
-}
-
-BYTE Mos6502::REL()
-{
-	// TODO: If something doesn't work, this is probably why
-	m_nRelAddress = static_cast<int8_t>(Read(m_uPC++));
-
-	return 0;
-}
-
-BYTE Mos6502::IND()
-{
-	WORD low = Read(m_uPC++);
-	WORD high = Read(m_uPC++);
-	WORD ptr = (high << 8) | low;
-
-	// There is a hardware bug in which if you try to read from memory $xxFF
-	// it will not fetch the high byte from the next page, but instead wrap around
-	// and fetch it from $xx00.
-	// e.g.: JMP $FF $45
-	// This will not read from $45FF $4600 as expected, but rather from $45FF $4500
-	// This piece of code emulates this behavior
-	if (low == 0x00FF)	// Hardware Bug :)
-	{
-		m_uAbsAddress = (Read(ptr & 0xFF00) << 8) | Read(ptr);
-	}
-	else
-	{
-		m_uAbsAddress = (Read(ptr + 1) << 8) | Read(ptr);
-	}
-
-	return 0;
-}
-
-BYTE Mos6502::ZPX()
-{
-	m_uAbsAddress = Read(m_uPC++) + m_uX;
-	m_uAbsAddress &= 0x00FF;
-	return 0;
-}
-
-BYTE Mos6502::ZPY()
-{
-	m_uAbsAddress = Read(m_uPC++) + m_uY;
-	m_uAbsAddress &= 0x00FF;
-	return 0;
-
-}
-
-BYTE Mos6502::ABX()
-{
-	WORD low = Read(m_uPC++);
-	WORD high = Read(m_uPC++);
-	m_uAbsAddress = (high << 8) | low;
-	m_uAbsAddress += m_uX;
-
-	// If incrementing by X changes the memory page, another clock cycle is needed
-	if ((m_uAbsAddress & 0xFF00) != (high << 8))
-		return 1;
-
-	return 0;
-}
-
-BYTE Mos6502::ABY()
-{
-	WORD low = Read(m_uPC++);
-	WORD high = Read(m_uPC++);
-	m_uAbsAddress = (high << 8) | low;
-	m_uAbsAddress += m_uY;
-
-	// If incrementing by Y changes the memory page, another clock cycle is needed
-	if ((m_uAbsAddress & 0xFF00) != (high << 8))
-		return 1;
-
-	return 0;
-}
-
-BYTE Mos6502::IDX()
-{
-	BYTE offset = Read(m_uPC++);
-
-	WORD low = Read(offset + m_uX);
-	WORD high = Read(offset + m_uX + 1);
-
-	m_uAbsAddress = (high << 8) | low;
-
-	return 0;
-}
-
-BYTE Mos6502::IDY()
-{
-	BYTE offset = Read(m_uPC++);
-
-	WORD low = Read(offset);
-	WORD high = Read(offset + 1);
-
-	m_uAbsAddress = (high << 8) | low;
-	m_uAbsAddress += m_uY;
-
-	if ((m_uAbsAddress & 0xFF00) != (high << 8))
-		return 1;
-	
-	return 0;
-
-	return 0;
-}
-
-BYTE Mos6502::AND()
-{
-	Fetch();
-	m_uAcc = m_uAcc & m_uFetched;
-
-	m_oStatus.Zero = (m_uAcc == 0x00);
-	m_oStatus.Negative = (m_uAcc & 0x80);
-
-	return 1;
-}
-
-BYTE Mos6502::BCS()
-{
-	Fetch();
-	if (m_oStatus.Carry)
-	{
-		m_uCycles++;
-		m_uAbsAddress = m_uPC + m_nRelAddress;
-
-		// Add another cycle on page boundary crossing
-		if ((m_uAbsAddress & 0xFF00) != (m_uPC & 0xFF00))
-			m_uCycles++;
-
-		m_uPC = m_uAbsAddress;
-	}
-
-	return 0;
-}
-
-#pragma endregion
-
-///////////////////// INSTRUCTIONS /////////////////////////
-
 void Mos6502::Tick()
 {
 	if (m_uCycles == 0)
@@ -482,13 +317,9 @@ void Mos6502::Tick()
 
 		m_uCycles = m_vecLookup[m_uOpcode].cycles;
 
-		// Get addressing mode
-		BYTE additionalCycle1 = m_vecLookup[m_uOpcode].addressMode();
-
-		// Get operation
-		BYTE additionalCycle2 = m_vecLookup[m_uOpcode].operation();
-
-		m_uCycles += (additionalCycle1 & additionalCycle2);
+		Fetch();	// Get Addressing mode, write the value for the operation to m_uFetched
+		if (m_bSwitchedPage && Execute())
+			m_uCycles++;
 	}
 
 	m_uCycles--;
@@ -504,9 +335,130 @@ void Mos6502::Write(WORD address, BYTE value)
 	m_pBus->Write(address, value);
 }
 
+bool Mos6502::Execute()
+{
+	switch (m_vecLookup[m_uOpcode].operation)
+	{
+	case AND: // ACC = ACC & Memory
+		m_uAcc = m_uAcc & m_uFetched;
+
+		// Set Flags if needed
+		m_oStatus.Zero = (m_uAcc == 0x00);
+		m_oStatus.Negative = (m_uAcc & 0x80);
+
+		return true;
+
+	case BCS: // Branch on Carry Set
+	{
+		if (m_oStatus.Carry)
+		{
+			m_uCycles++;
+			WORD jumpTo = m_uPC + static_cast<int8_t>(m_uFetched);	// TODO: If something breaks, its here
+
+			if ((jumpTo & 0xFF00) != (m_uPC & 0xFF00))
+				m_uCycles++;
+
+			m_uPC = jumpTo;
+		}
+
+		return false;
+	}
+
+	default:
+		return false;
+	}
+}
+
 BYTE Mos6502::Fetch()
 {
-	m_uFetched = Read(m_uAbsAddress);
-	return m_uFetched;
+	m_bSwitchedPage = false;
+	switch (m_vecLookup[m_uOpcode].addressMode)
+	{
+	case IMP:
+		SERVE(0x00);
+
+	case ACC:
+		SERVE(m_uAcc);
+
+	case IMM:
+		SERVE(Read(m_uPC++));
+
+	case ZPG:
+		SERVE(Read(0x00FF & Read(m_uPC++)));
+
+	case ABS:
+		// I pray to god that the Read()'s are executed in order or else
+		// the byte might be BE instead of LE
+		SERVE(Read(
+			TO_WORD(Read(m_uPC++), Read(m_uPC++))
+		));
+
+	case REL:
+		SERVE(Read(m_uPC++));
+
+	case IND:
+	{
+		BYTE lo = Read(m_uPC++);
+		BYTE hi = Read(m_uPC++);
+		SERVE(Read(
+			TO_WORD(Read(TO_WORD(hi, lo + 0x01)), Read(TO_WORD(hi, lo)))
+		));
+	};
+
+	case ZPX:
+	{
+		BYTE lo = Read(m_uPC++);
+		m_bSwitchedPage = (lo + m_uX <= lo);	// If lo + X is less than lo then we wrapped around
+
+		SERVE(Read(TO_WORD(lo + m_uX, 0x00)));
+	};
+
+	case ZPY:
+	{
+		BYTE lo = Read(m_uPC++);
+		m_bSwitchedPage = (lo + m_uY <= lo);	// If lo + X is less than lo then we wrapped around
+
+		SERVE(Read(TO_WORD(lo + m_uY, 0x00)));
+	};
+
+	case ABX:
+	{
+		BYTE lo = Read(m_uPC++);
+		BYTE hi = Read(m_uPC++);
+		WORD addr = TO_WORD(lo, hi) + m_uX;
+		m_bSwitchedPage = (((addr & 0xFF00) >> 8) != hi);
+		SERVE(addr);
+	};
+
+	case ABY:
+	{
+		BYTE lo = Read(m_uPC++);
+		BYTE hi = Read(m_uPC++);
+		WORD addr = TO_WORD(lo, hi) + m_uY;
+		m_bSwitchedPage = (((addr & 0xFF00) >> 8) != hi);
+		SERVE(addr);
+	};
+
+	case IDX:
+	{
+		BYTE offset = Read(m_uPC++);
+		SERVE(Read(TO_WORD(Read(offset + m_uX), Read(offset + m_uX + 1))));
+	};
+
+	case IDY:
+	{
+		BYTE offset = Read(m_uPC++);
+		BYTE lo = Read(offset);
+		BYTE hi = Read(offset + 1);
+
+		WORD addr = TO_WORD(lo, hi) + m_uY;
+		m_bSwitchedPage = (((addr & 0xFF00) >> 8) != hi);
+
+		SERVE(Read(addr));
+	};
+
+	default:
+		SERVE(0x00);
+	}
 }
 
