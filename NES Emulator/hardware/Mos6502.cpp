@@ -427,7 +427,7 @@ BYTE Mos6502::Fetch()
 		BYTE hi = Read(m_uPC++);
 		WORD addr = TO_WORD(lo, hi) + m_uX;
 		m_bSwitchedPage = (((addr & 0xFF00) >> 8) != hi);
-		SERVE(addr);
+		SERVE(Read(addr));
 	};
 
 	case ABY:
@@ -436,7 +436,7 @@ BYTE Mos6502::Fetch()
 		BYTE hi = Read(m_uPC++);
 		WORD addr = TO_WORD(lo, hi) + m_uY;
 		m_bSwitchedPage = (((addr & 0xFF00) >> 8) != hi);
-		SERVE(addr);
+		SERVE(Read(addr));
 	};
 
 	case IDX:
