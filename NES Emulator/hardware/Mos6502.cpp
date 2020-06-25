@@ -1,15 +1,23 @@
 #include "Mos6502.hpp"
 #include "Bus.hpp"
 
+#include <sstream>
+#include <iomanip>
+
 #define MAKE(x, y, z) {#x, x, y, z}
 #define SERVE(x) return m_uFetched = x
 #define TO_WORD(lo, hi) ((static_cast<WORD>(hi) << 8) | lo)
+#define HEX(p, x, w) p << std::setfill('0') << std::setw(w) << std::hex << std::uppercase << (WORD)x
+
+#define Push(x) Write(0x0100 + (m_uSP--), x)
+#define Pop() Read(0x0100 + (++m_uSP))
 
 Mos6502::Mos6502() :
-	m_pBus(nullptr), m_oStatus(),
+	m_pBus(nullptr),
 	m_uAcc(0x00), m_uX(0x00), m_uY(0x00), m_uSP(0x00), m_uPC(0x0000),
 	m_uFetched(0x00), m_uOpcode(0x00), m_uCycles(0x00)
 {
+
 	m_vecLookup = 
 	{
 		// 0x00
@@ -300,6 +308,8 @@ Mos6502::Mos6502() :
 		MAKE(INC, ABX, 7),
 		MAKE(UOP, IMP, 2),
 		};
+
+	// Reset();
 }
 
 Mos6502::~Mos6502()
@@ -318,11 +328,168 @@ void Mos6502::Tick()
 		m_uCycles = m_vecLookup[m_uOpcode].cycles;
 
 		Fetch();	// Get Addressing mode, write the value for the operation to m_uFetched
-		if (m_bSwitchedPage && Execute())
+		bool m_bSwitch = Execute();
+		if (m_bSwitchedPage && m_bSwitch)
 			m_uCycles++;
 	}
 
 	m_uCycles--;
+}
+
+void Mos6502::Reset()
+{
+	m_uAcc = 0x00;
+	m_uX = 0x00;
+	m_uY = 0x00;
+	m_uSP = 0xFD;
+	m_oStatus.Raw = 0b00000000;
+	m_oStatus.Flag.Unused = true;
+
+	m_uPC = TO_WORD(Read(0xFFFC), Read(0xFFFD));	// 0xFFFC is the reset vector
+
+	m_uFetched = 0x00;
+	m_uCycles = 0;
+}
+
+void Mos6502::IRQ()
+{
+	if (!m_oStatus.Flag.Interrupt)
+	{
+		// Push current PC to stack
+		Push((m_uPC & 0xFF00) >> 8);
+		Push(m_uPC & 0x00FF);
+
+		// Push status to stack
+		m_oStatus.Flag.Break = false;
+		m_oStatus.Flag.Unused = true;
+		m_oStatus.Flag.Interrupt = true;
+		Push(m_oStatus.Raw);	// TODO: Untested, might break
+
+		// Get new PC from Interrupt vector 0xFFFE
+		m_uPC = TO_WORD(Read(0xFFFE), Read(0xFFFF));
+
+		m_uCycles = 7;
+	}
+}
+
+void Mos6502::NMI()
+{
+	// Push current PC to stack
+	Push((m_uPC & 0xFF00) >> 8);
+	Push(m_uPC & 0x00FF);
+
+	// Push status to stack
+	m_oStatus.Flag.Break = false;
+	m_oStatus.Flag.Unused = true;
+	m_oStatus.Flag.Interrupt = true;
+	Push(m_oStatus.Raw);	// TODO: Untested, might break
+
+	// Get new PC from Interrupt vector 0xFFFE
+	m_uPC = TO_WORD(Read(0xFFFA), Read(0xFFFB));
+
+	m_uCycles = 7;
+}
+
+std::map<WORD, std::string> Mos6502::Disassemble(WORD begin, WORD end)
+{
+	// Disassembles the RAM from $begin to $end
+	std::map<WORD, std::string> disassemble;
+
+	for (WORD ptr = begin; ptr <= end;)
+	{
+		Instruction i = m_vecLookup[Read(ptr)];
+		std::stringstream ss;
+		ss << "(" << (WORD)i.cycles << ") " << HEX("$", ptr, 4) << "  ";
+
+		// Do different things depending on addressing mode
+		// Very ugly, but it works I guess. It's okay, this code doesn't need to be efficient
+
+		WORD opcodeAddress = ptr;
+		switch (i.addressMode)
+		{
+		case IMP:
+			ss << HEX("", Read(ptr), 2) << "\t\t  " << i.name << " ";
+			++opcodeAddress;
+			break;
+
+		case ACC:
+			ss << HEX("", Read(ptr), 2) << "\t\t  " << i.name << " ";
+			ss << " %acc";
+			++opcodeAddress;
+			break;
+
+		case IMM:
+			ss << HEX("", Read(ptr), 2) << " " << HEX("", Read(ptr + 1), 2) << "\t  " << i.name << " ";
+			ss << HEX("#$", Read(++opcodeAddress), 2);
+			break;
+
+		case ZPG:
+			ss << HEX("", Read(ptr), 2) << " " << HEX("", Read(ptr + 1), 2) << "\t  " << i.name << " ";
+			ss << HEX("$00", Read(++opcodeAddress), 4);
+			break;
+
+		case ABS:
+			ss << HEX("", Read(ptr), 2) << " " << HEX("", Read(ptr + 1), 2) 
+				<< " " << HEX("", Read(ptr + 2), 2) << "\t  " << i.name << " ";
+			ss << HEX("$", TO_WORD(Read(++opcodeAddress), Read(++opcodeAddress)), 4);
+			break;
+
+		case REL:
+			ss << HEX("", Read(ptr), 2) << " " << HEX("", Read(ptr + 1), 2) << "\t  " << i.name << " ";
+			ss << HEX("$", ptr + (int8_t)Read(++opcodeAddress) + 2, 4);
+			break;
+
+		case IND:
+			ss << HEX("", Read(ptr), 2) << " " << HEX("", Read(ptr + 1), 2)
+				<< " " << HEX("", Read(ptr + 2), 2) << "\t  " << i.name << " ";
+			ss << "[" << HEX("$", TO_WORD(Read(++opcodeAddress), Read(++opcodeAddress)), 4) << "]";
+			break;
+
+		case ZPX:
+			ss << HEX("", Read(ptr), 2) << " " << HEX("", Read(ptr + 1), 2) << "\t  " << i.name << " ";
+			ss << "(" << HEX("$00", Read(++opcodeAddress), 4) << " + X)";
+			break;
+
+		case ZPY:
+			ss << HEX("", Read(ptr), 2) << " " << HEX("", Read(ptr + 1), 2) << "\t  " << i.name << " ";
+			ss << "(" << HEX("$00", Read(++opcodeAddress), 4) << " + Y)";
+			break;
+
+		case ABX:
+			ss << HEX("", Read(ptr), 2) << " " << HEX("", Read(ptr + 1), 2)
+				<< " " << HEX("", Read(ptr + 2), 2) << "\t  " << i.name << " ";
+			ss << "(" << HEX("$", TO_WORD(Read(++opcodeAddress), Read(++opcodeAddress)), 4) << " + X)";
+			break;
+
+		case ABY:
+			ss << HEX("", Read(ptr), 2) << " " << HEX("", Read(ptr + 1), 2)
+				<< " " << HEX("", Read(ptr + 2), 2) << "\t  " << i.name << " ";
+			ss << "(" << HEX("$", TO_WORD(Read(++opcodeAddress), Read(++opcodeAddress)), 4) << " + Y)";
+			break;
+
+		case IDX:
+			ss << HEX("", Read(ptr), 2) << " " << HEX("", Read(ptr + 1), 2)
+				<< " " << HEX("", Read(ptr + 2), 2) << "\t  " << i.name << " ";
+			ss << "[" << HEX("$", TO_WORD(Read(++opcodeAddress), Read(++opcodeAddress)), 4) << " + X]";
+			break;
+
+		case IDY:
+			ss << HEX("", Read(ptr), 2) << " " << HEX("", Read(ptr + 1), 2)
+				<< " " << HEX("", Read(ptr + 2), 2) << "\t  " << i.name << " ";
+			ss << "([" << HEX("$", TO_WORD(Read(++opcodeAddress), Read(++opcodeAddress)), 4) << "] + Y)";
+			break;
+
+		default:
+			ss << "(Unknown addressing mode)";
+			++opcodeAddress;
+			break;
+		}
+
+		disassemble.insert(std::make_pair(ptr, ss.str()));
+		ptr = opcodeAddress;
+	}
+
+	return disassemble;
 }
 
 BYTE Mos6502::Read(WORD address)
@@ -337,20 +504,27 @@ void Mos6502::Write(WORD address, BYTE value)
 
 bool Mos6502::Execute()
 {
+	/*
+	std::cout << std::hex << "$" << m_uPC <<
+		": " << m_vecLookup[m_uOpcode].name << 
+		"   (" << std::hex << static_cast<WORD>(m_uOpcode) << ")" << std::endl;
+	*/
 	switch (m_vecLookup[m_uOpcode].operation)
 	{
-	case AND: // ACC = ACC & Memory
+	case AND:	// ACC = ACC & Memory
+	{
 		m_uAcc = m_uAcc & m_uFetched;
 
 		// Set Flags if needed
-		m_oStatus.Zero = (m_uAcc == 0x00);
-		m_oStatus.Negative = (m_uAcc & 0x80);
+		m_oStatus.Flag.Zero = (m_uAcc == 0x00);
+		m_oStatus.Flag.Negative = (m_uAcc & 0x80);
 
 		return true;
+	}
 
-	case BCS: // Branch on Carry Set
+	case BCC:	// Branch on Carry Clear
 	{
-		if (m_oStatus.Carry)
+		if (!m_oStatus.Flag.Carry)
 		{
 			m_uCycles++;
 			WORD jumpTo = m_uPC + static_cast<int8_t>(m_uFetched);	// TODO: If something breaks, its here
@@ -360,6 +534,67 @@ bool Mos6502::Execute()
 
 			m_uPC = jumpTo;
 		}
+
+		return false;
+	}
+
+	case BCS:	// Branch on Carry Set
+	{
+		if (m_oStatus.Flag.Carry)
+		{
+			m_uCycles++;
+			WORD jumpTo = m_uPC + static_cast<int8_t>(m_uFetched);	// TODO: If something breaks, its here
+
+			if ((jumpTo & 0xFF00) != (m_uPC & 0xFF00))
+				m_uCycles++;
+
+			m_uPC = jumpTo;
+		}
+
+		return false;
+	}
+
+	case BNE:	// Branch on not equal (Z = 0)
+	{
+		if (!m_oStatus.Flag.Zero)
+		{
+			m_uCycles++;
+			WORD jumpTo = m_uPC + static_cast<int8_t>(m_uFetched);	// TODO: If something breaks, its here
+
+			if ((jumpTo & 0xFF00) != (m_uPC & 0xFF00))
+				m_uCycles++;
+
+			m_uPC = jumpTo;
+		}
+
+		return false;
+	}
+
+	case BEQ:	// Branch on equal (Z = 1)
+	{
+		if (!m_oStatus.Flag.Zero)
+		{
+			m_uCycles++;
+			WORD jumpTo = m_uPC + static_cast<int8_t>(m_uFetched);	// TODO: If something breaks, its here
+
+			if ((jumpTo & 0xFF00) != (m_uPC & 0xFF00))
+				m_uCycles++;
+
+			m_uPC = jumpTo;
+		}
+
+		return false;
+	}
+
+	case RTI:	// Return from interrupt
+	{
+		// Retrieve Status from stack
+		m_oStatus.Raw = Pop();
+		m_oStatus.Raw &= ~m_oStatus.Flag.Break;
+		m_oStatus.Raw &= ~m_oStatus.Flag.Unused;
+
+		// Retrieve PC from stack
+		m_uPC = TO_WORD(Pop(), Pop());
 
 		return false;
 	}

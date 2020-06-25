@@ -10,8 +10,8 @@ public:
 	Bus();
 	~Bus();
 
-private:
 	Mos6502 m_oCPU;
+private:
 	BYTE* m_pRAM;
 
 public:

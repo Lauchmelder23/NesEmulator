@@ -1,5 +1,6 @@
 #pragma once
 #include <functional>
+#include <map>
 
 #include "../util.hpp"
 
@@ -86,17 +87,23 @@ class Bus;
 class Mos6502
 {
 public:
-	typedef struct sFlags
+	typedef union Status
 	{
-		BYTE Carry : 1 = 1;
-		BYTE Zero : 1 = 1;
-		BYTE Interrupt : 1 = 1;
-		BYTE Decimal : 1 = 1;
-		BYTE Break : 1 = 1;
-		BYTE Unused : 1 = 1;
-		BYTE Overflow : 1 = 1;
-		BYTE Negative : 1 = 1;
-	} Flags;
+		Status() {}
+		BYTE Raw = 0b00000000;
+
+		struct sFlags
+		{
+			BYTE Carry : 1 = 0;
+			BYTE Zero : 1 = 0;
+			BYTE Interrupt : 1 = 0;
+			BYTE Decimal : 1 = 0;
+			BYTE Break : 1 = 0;
+			BYTE Unused : 1 = 0;
+			BYTE Overflow : 1 = 0;
+			BYTE Negative : 1 = 0;
+		} Flag;
+	} Status;
 
 	typedef BYTE AddressMode;
 	typedef BYTE Operation;
@@ -114,11 +121,21 @@ public:
 	~Mos6502();
 
 	void ConnectBus(Bus* bus) { m_pBus = bus; }
+	bool Done() { return (m_uCycles == 0); }
 	
 	void Tick();
 	void Reset();
-	void IRQ();
-	void NMI();
+	void IRQ();	// Interrupt Request
+	void NMI(); // Non-maskable interrupt
+
+	std::map<WORD, std::string> Disassemble(WORD begin, WORD end);
+
+	// Registers
+	Status m_oStatus;	// Status register (Flags)
+	BYTE m_uAcc;		// Accumulator
+	BYTE m_uX, m_uY;	// X/Y registers
+	BYTE m_uSP;			// Stack pointer
+	WORD m_uPC;			// Program counter
 
 private:
 	BYTE Read(WORD address);
@@ -129,13 +146,6 @@ private:
 
 private:
 	Bus* m_pBus;
-
-	// Registers
-	Flags m_oStatus;	// Status register (Flags)
-	BYTE m_uAcc;		// Accumulator
-	BYTE m_uX, m_uY;	// X/Y registers
-	BYTE m_uSP;			// Stack pointer
-	WORD m_uPC;			// Program counter
 
 	BYTE m_uFetched;
 	bool m_bSwitchedPage;
