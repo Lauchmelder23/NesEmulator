@@ -18,7 +18,7 @@ if(WIN32)
 	)
 else()
 	find_package(SDL2 REQUIRED)
-	find_package(SDL2_ttf REQUIRED)
+	find_package(SDL2TTF REQUIRED)
 endif(WIN32)
 
 project ("NES Emulator")
