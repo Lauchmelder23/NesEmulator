@@ -143,6 +143,7 @@ public:
 	void NMI(); // Non-maskable interrupt
 
 	std::map<WORD, std::string> Disassemble(WORD begin, WORD end);
+	uint64_t GetCycles() const { return m_uCyclesTotal; }
 
 	// Registers
 	Status m_oStatus;	// Status register (Flags)
@@ -164,6 +165,7 @@ private:
 	BYTE m_uFetched;
 	bool m_bSwitchedPage;
 	BYTE m_uOpcode, m_uCycles;
+	uint64_t m_uCyclesTotal;
 
 	std::vector<Instruction> m_vecLookup;
 };

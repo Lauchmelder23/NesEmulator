@@ -74,7 +74,8 @@ private:
 			{
 				auto disas = m_mapDisassemble.find(m_oNes.m_oCPU.m_uPC);
 				if (disas != m_mapDisassemble.end())
-					std::cout << disas->second << "\t\t"
+					std::cout << "(" << m_oNes.m_oCPU.GetCycles() << ") "
+					<< disas->second << "\t\t"
 					<< "A=" << (WORD)m_oNes.m_oCPU.m_uAcc << ", "
 					<< "X=" << (WORD)m_oNes.m_oCPU.m_uX << ", "
 					<< "Y=" << (WORD)m_oNes.m_oCPU.m_uY << ", "

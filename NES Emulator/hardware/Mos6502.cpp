@@ -15,7 +15,7 @@
 Mos6502::Mos6502() :
 	m_pBus(nullptr),
 	m_uAcc(0x00), m_uX(0x00), m_uY(0x00), m_uSP(0x00), m_uPC(0x0000),
-	m_uFetched(0x00), m_uOpcode(0x00), m_uCycles(0x00)
+	m_uFetched(0x00), m_uOpcode(0x00), m_uCycles(0x00), m_uCyclesTotal(0)
 {
 
 	m_vecLookup = 
@@ -334,6 +334,7 @@ void Mos6502::Tick()
 	}
 
 	m_uCycles--;
+	m_uCyclesTotal++;
 }
 
 void Mos6502::Reset()
@@ -399,7 +400,7 @@ std::map<WORD, std::string> Mos6502::Disassemble(WORD begin, WORD end)
 	{
 		Instruction i = m_vecLookup[Read(ptr)];
 		std::stringstream ss;
-		ss << "(" << (WORD)i.cycles << ") " << HEX("$", ptr, 4) << "  ";
+		ss << HEX("$", ptr, 4) << "  ";
 
 		// Do different things depending on addressing mode
 		// Very ugly, but it works I guess. It's okay, this code doesn't need to be efficient
