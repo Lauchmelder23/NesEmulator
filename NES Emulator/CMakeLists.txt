@@ -40,7 +40,7 @@ add_custom_command (TARGET nesemu POST_BUILD
 )
 endif(WIN32)
 
-add_custom_command (TARGET nesemu POST_BUILD
-	COMMAND ${CMAKE_COMMAND} -E copy "${PROJECT_SOURCE_DIR}/NES Emulator/resources/PressStart2p.ttf" $<TARGET_FILE_DIR:nesemu>
-	COMMAND ${CMAKE_COMMAND} -E copy "${PROJECT_SOURCE_DIR}/NES Emulator/resources/nestest.nes" $<TARGET_FILE_DIR:nesemu>
-)
+#add_custom_command (TARGET nesemu POST_BUILD
+#	COMMAND ${CMAKE_COMMAND} -E copy "${PROJECT_SOURCE_DIR}/NES Emulator/resources/PressStart2p.ttf" $<TARGET_FILE_DIR:nesemu>
+#	COMMAND ${CMAKE_COMMAND} -E copy "${PROJECT_SOURCE_DIR}/NES Emulator/resources/nestest.nes" $<TARGET_FILE_DIR:nesemu>
+#)
