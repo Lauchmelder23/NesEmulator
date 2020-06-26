@@ -18,8 +18,13 @@ target_include_directories (nesemu PRIVATE
 target_link_libraries (nesemu PRIVATE
 	${SDL2_LIBRARIES}
 	${SDL2_TTF_LIBRARY}
-	sdlf
 )
+
+if(NOT WIN32)
+	target_link_libraries(nesemu PRIVATE
+		pthread
+	)
+endif()
 
 if(WIN32)
 add_custom_command (TARGET nesemu POST_BUILD
