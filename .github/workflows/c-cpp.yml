@@ -20,7 +20,9 @@ jobs:
       with:
         cmakeGenerator: UnixMakefiles
     - name: make
-      run: make
+      run: |
+        alias ld=/bin/true
+        make
     - name: make check
       run: make check
     - name: make distcheck
