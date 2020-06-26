@@ -13,6 +13,7 @@ target_include_directories (nesemu PRIVATE
 	${SDL2_INCLUDE_DIRS}
 	${SDL2TTF_INCLUDE_DIR}
 	${PROJECT_SOURCE_DIR}/SDLFramework/src/sdlf
+	${PNG_INCLUDE_DIR}
 )
 
 target_link_libraries (nesemu PRIVATE
@@ -25,6 +26,8 @@ if(NOT WIN32)
 	target_link_libraries(nesemu PRIVATE
 		pthread
 		${FREETYPE_LIBRARY}
+		${ZLIB_LIBRARY}
+		${PNG_LIBRARY}
 	)
 endif()
 

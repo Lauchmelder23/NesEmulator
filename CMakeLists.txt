@@ -23,9 +23,11 @@ if(WIN32)
 	)
 else()
 	find_package(SDL2 REQUIRED)
+	find_package(PNG REQUIRED)
 	
 	set(SDL2_TTF_LIBRARY "SDL2_TTF_DIR" CACHE PATH "The path to the SDL_ttf library file")
 	set(FREETYPE_LIBRARY "FREETYPE_DIR" CACHE PATH "The path to the Freetype library file")
+	set(ZLIB_LIBRARY "ZLIB_DIR" CACHE PATH "The path to the zlib library file")
 endif(WIN32)
 
 # Include sub-projects.
