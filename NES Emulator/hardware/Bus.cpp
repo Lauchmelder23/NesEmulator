@@ -1,5 +1,6 @@
 #include "Bus.hpp"
 #include <memory>
+#include <cstring>
 
 Bus::Bus() :
 	m_pRAM(nullptr)
