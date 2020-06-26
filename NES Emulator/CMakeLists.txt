@@ -24,6 +24,7 @@ target_link_libraries (nesemu PRIVATE
 if(NOT WIN32)
 	target_link_libraries(nesemu PRIVATE
 		pthread
+		${FREETYPE_LIBRARY}
 	)
 endif()
 
