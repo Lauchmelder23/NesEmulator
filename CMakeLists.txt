@@ -11,8 +11,14 @@ if(WIN32)
 		${CMAKE_SOURCE_DIR}/SDLFramework/3rdparty/lib/SDL2.lib 
 		${CMAKE_SOURCE_DIR}/SDLFramework/3rdparty/lib/SDL2main.lib
 	)
+
+	set(SDL2_TTF_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/NES Emulator/3rdparty/include")
+	set(SDL2_TTF_LIBRARIES 
+		"${CMAKE_SOURCE_DIR}/NES Emulator/3rdparty/lib/SDL2_ttf.lib"
+	)
 else()
 	find_package(SDL2 REQUIRED)
+	find_package(SDL2_ttf REQUIRED)
 endif(WIN32)
 
 project ("NES Emulator")

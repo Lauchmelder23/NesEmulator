@@ -94,16 +94,6 @@ public:
 
 		struct sFlags
 		{
-<<<<<<< HEAD
-			BYTE Carry : 1;
-			BYTE Zero : 1;
-			BYTE Interrupt : 1;
-			BYTE Decimal : 1;
-			BYTE Break : 1;
-			BYTE Unused : 1;
-			BYTE Overflow : 1;
-			BYTE Negative : 1;
-=======
 			BYTE Negative : 1;
 			BYTE Overflow : 1;
 			BYTE Unused : 1;
@@ -112,7 +102,6 @@ public:
 			BYTE Interrupt : 1;
 			BYTE Zero : 1;
 			BYTE Carry : 1;
->>>>>>> instructions
 		} Flag;
 
 		std::string AsString()

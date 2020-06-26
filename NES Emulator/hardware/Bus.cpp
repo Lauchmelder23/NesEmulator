@@ -1,10 +1,6 @@
 #include "Bus.hpp"
 #include <memory>
-<<<<<<< HEAD
-#include <cstring>
-=======
 #include "../util.hpp"
->>>>>>> instructions
 
 Bus::Bus() :
 	m_pRAM(nullptr)
