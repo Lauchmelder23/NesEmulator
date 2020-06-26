@@ -1,5 +1,6 @@
 #include "Bus.hpp"
 #include <memory>
+#include <string.h>
 #include "../util.hpp"
 
 Bus::Bus() :
@@ -7,7 +8,7 @@ Bus::Bus() :
 {
 	// Initialize and clear RAM
 	m_pRAM = new BYTE[0x10000]; //64 KB of RAM
-	memset(m_pRAM, 0, 0x10000);
+	std::memset(m_pRAM, 0, 0x10000);
 
 	// Connect CPU to BUS
 	m_oCPU.ConnectBus(this);

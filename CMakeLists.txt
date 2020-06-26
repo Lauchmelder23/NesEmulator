@@ -15,8 +15,8 @@ if(WIN32)
 		${CMAKE_SOURCE_DIR}/SDLFramework/3rdparty/lib/SDL2main.lib
 	)
 
-	set(SDL2_TTF_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/NES Emulator/3rdparty/include")
-	set(SDL2_TTF_LIBRARIES 
+	set(SDL2TTF_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/NES Emulator/3rdparty/include")
+	set(SDL2_TTF_LIBRARY
 		"${CMAKE_SOURCE_DIR}/NES Emulator/3rdparty/lib/SDL2_ttf.lib"
 	)
 else()
