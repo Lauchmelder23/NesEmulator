@@ -4,13 +4,15 @@
 #include <sstream>
 #include <iomanip>
 
-#define MAKE(x, y, z) {#x, x, y, z}
-#define SERVE(x) return m_uFetched = x
-#define TO_WORD(lo, hi) ((static_cast<WORD>(hi) << 8) | lo)
-#define HEX(p, x, w) p << std::setfill('0') << std::setw(w) << std::hex << std::uppercase << (WORD)x
+#define MAKE(x, y, z) {#x, x, y, z}		// Creates an Instruction initializer list
+#define SERVE(x) return m_uFetched = x	// Returns the given value and sets fetch
+#define TO_WORD(lo, hi) ((static_cast<WORD>(hi) << 8) | lo)	// Assembles a WORD from two BYTES
+#define HEX(p, x, w) p << std::setfill('0') << std::setw(w) << std::hex << std::uppercase << (WORD)x // fancy hex output
 
-#define Push(x) Write(0x0100 + (m_uSP--), x)
-#define Pop() Read(0x0100 + (++m_uSP))
+#define BIT_(n, x) (x & (1 << n))	// Masks the input with the bit at position n
+
+#define Push(x) Write(0x0100 + (m_uSP--), x)	// Pushes to stack
+#define Pop() Read(0x0100 + (++m_uSP))			// Pops from stack
 
 Mos6502::Mos6502() :
 	m_pBus(nullptr),
@@ -530,9 +532,9 @@ bool Mos6502::Execute()
 
 		m_oStatus.Flag.Carry = (result > 0xFF);
 		m_oStatus.Flag.Zero = !(result & 0xFF);
-		m_oStatus.Flag.Negative = (result & 0x80);
+		m_oStatus.Flag.Negative = BIT_(7, result);
 
-		// If acc and fetched have the same sign AND the sum and fetched have a different sign
+		// If accumulator and fetched have the same sign AND the sum and fetched have a different sign
 		// then we have overflow
 		// Checks if the previous are both true --------------------------------------------------------|
 		//        Checks if signs are different ------------------------------------|                   |
@@ -547,7 +549,7 @@ bool Mos6502::Execute()
 			m_oStatus.Flag.Zero = true;
 
 		return true;
-	} break;
+	};
 
 	case AND:	// ACC = ACC & Memory
 	{
@@ -555,27 +557,27 @@ bool Mos6502::Execute()
 
 		// Set Flags if needed
 		m_oStatus.Flag.Zero = (m_uAcc == 0x00);
-		m_oStatus.Flag.Negative = (m_uAcc & 0x80);
+		m_oStatus.Flag.Negative = BIT_(7, m_uAcc);
 
 		return true;
-	} break;
+	};
 
-	case ASL:
+	case ASL:	// Arithmetic shift left
 	{
 		WORD result = (WORD)m_uFetched << 1;
 
-		m_oStatus.Flag.Carry = (result & 0x0100);
+		m_oStatus.Flag.Carry = BIT_(8, result);
 		m_oStatus.Flag.Zero = ((result & 0x00FF) == 0);
-		m_oStatus.Flag.Negative = (result & 0x0080);
+		m_oStatus.Flag.Negative = BIT_(7, result);
 
 		if (m_vecLookup[m_uOpcode].addressMode == ACC)
 			m_uAcc = (result & 0x00FF);
 		else
 			Write(m_uFetchedFrom, result & 0x00FF);
 
-		return 0;
+		return false;
 
-	} break;
+	};
 
 	case BCC:	// Branch on Carry Clear
 	{
@@ -591,7 +593,7 @@ bool Mos6502::Execute()
 		}
 
 		return false;
-	} break;
+	};
 
 	case BCS:	// Branch on Carry Set
 	{
@@ -607,23 +609,7 @@ bool Mos6502::Execute()
 		}
 
 		return false;
-	} break;
-
-	case BNE:	// Branch on not equal (Z = 0)
-	{
-		if (!m_oStatus.Flag.Zero)
-		{
-			m_uCycles++;
-			WORD jumpTo = m_uPC + static_cast<int8_t>(m_uFetched);	// TODO: If something breaks, its here
-
-			if ((jumpTo & 0xFF00) != (m_uPC & 0xFF00))
-				m_uCycles++;
-
-			m_uPC = jumpTo;
-		}
-
-		return false;
-	} break;
+	};
 
 	case BEQ:	// Branch on equal (Z = 1)
 	{
@@ -639,20 +625,191 @@ bool Mos6502::Execute()
 		}
 
 		return false;
-	} break;
+	};
+
+	case BIT:	// Test bits in memory with accumulator
+	{
+		BYTE result = m_uAcc & m_uFetched;
+		
+		m_oStatus.Flag.Zero = (result == 0x00);
+		m_oStatus.Flag.Negative = BIT_(7, result);
+		m_oStatus.Flag.Overflow = BIT_(6, result);
+
+		return false;
+	};
+
+	case BMI:	// Branch on Minus
+	{
+		if (m_oStatus.Flag.Negative)
+		{
+			m_uCycles++;
+			WORD jumpTo = m_uPC + static_cast<int8_t>(m_uFetched);	// TODO: If something breaks, its here
+
+			if ((jumpTo & 0xFF00) != (m_uPC & 0xFF00))
+				m_uCycles++;
+
+			m_uPC = jumpTo;
+		}
+
+		return false;
+	}
+
+	case BNE:	// Branch on not equal (Z = 0)
+	{
+		if (!m_oStatus.Flag.Zero)
+		{
+			m_uCycles++;
+			WORD jumpTo = m_uPC + static_cast<int8_t>(m_uFetched);	// TODO: If something breaks, its here
+
+			if ((jumpTo & 0xFF00) != (m_uPC & 0xFF00))
+				m_uCycles++;
+
+			m_uPC = jumpTo;
+		}
+
+		return false;
+	};
+
+	case BPL:	// Branch on plus
+	{
+		if (!m_oStatus.Flag.Negative)
+		{
+			m_uCycles++;
+			WORD jumpTo = m_uPC + static_cast<int8_t>(m_uFetched);	// TODO: If something breaks, its here
+
+			if ((jumpTo & 0xFF00) != (m_uPC & 0xFF00))
+				m_uCycles++;
+
+			m_uPC = jumpTo;
+		}
+
+		return false;
+	}
+
+	case BRK:	// Break
+	{
+		m_uPC++;
+		m_oStatus.Flag.Interrupt = true;
+
+		Push((m_uPC & 0xFF00) >> 8);
+		Push(m_uPC & 0x00FF);
+
+		m_oStatus.Flag.Break = true;
+		Push(m_oStatus.Raw);
+		m_oStatus.Flag.Break = false;
+
+		m_uPC = TO_WORD(Read(0xFFFE), Read(0xFFFF));
+
+		m_oStatus.Flag.Break = true;
+		return false;
+	};
+
+	case BVC:	// Branch on overflow clear
+	{
+		if (!m_oStatus.Flag.Overflow)
+		{
+			m_uCycles++;
+			WORD jumpTo = m_uPC + static_cast<int8_t>(m_uFetched);	// TODO: If something breaks, its here
+
+			if ((jumpTo & 0xFF00) != (m_uPC & 0xFF00))
+				m_uCycles++;
+
+			m_uPC = jumpTo;
+		}
+
+		return false;
+	}
+
+	case BVS:	// Branch on overflow set
+	{
+		if (m_oStatus.Flag.Overflow)
+		{
+			m_uCycles++;
+			WORD jumpTo = m_uPC + static_cast<int8_t>(m_uFetched);	// TODO: If something breaks, its here
+
+			if ((jumpTo & 0xFF00) != (m_uPC & 0xFF00))
+				m_uCycles++;
+
+			m_uPC = jumpTo;
+		}
+
+		return false;
+	}
+
+	case CLC:	// Clear Carry
+	{
+		m_oStatus.Flag.Carry = false;
+		return false;
+	}
+
+	case CLD:	// Clear Carry
+	{
+		m_oStatus.Flag.Decimal = false;
+		return false;
+	}
+
+	case CLI:	// Clear interrupt
+	{
+		m_oStatus.Flag.Interrupt = false;
+		return false;
+	}
+
+	case CLV:	// Clear Overflow
+	{
+		m_oStatus.Flag.Overflow = false;
+		return false;
+	}
+
+	case CMP:	// Compare Accumulator and memory
+	{
+		m_oStatus.Flag.Carry = (m_uAcc >= m_uFetched);
+		m_oStatus.Flag.Zero = (m_uAcc == m_uFetched);
+		m_oStatus.Flag.Negative = BIT_(7, (m_uAcc - m_uFetched));
+
+		return true;
+	}
+
+	case CPX:	// Compary X and Memory
+	{
+		m_oStatus.Flag.Carry = (m_uX >= m_uFetched);
+		m_oStatus.Flag.Zero = (m_uX == m_uFetched);
+		m_oStatus.Flag.Negative = BIT_(7, (m_uX - m_uFetched));
+
+		return false;
+	}
+
+	case CPY:	// Compary Y and Memory
+	{
+		m_oStatus.Flag.Carry = (m_uY >= m_uFetched);
+		m_oStatus.Flag.Zero = (m_uY == m_uFetched);
+		m_oStatus.Flag.Negative = BIT_(7, (m_uY - m_uFetched));
+
+		return false;
+	}
 
 	case RTI:	// Return from interrupt
 	{
 		// Retrieve Status from stack
 		m_oStatus.Raw = Pop();
-		m_oStatus.Raw &= ~m_oStatus.Flag.Break;
-		m_oStatus.Raw &= ~m_oStatus.Flag.Unused;
+		m_oStatus.Flag.Break = 0;
 
 		// Retrieve PC from stack
 		m_uPC = TO_WORD(Pop(), Pop());
 
 		return false;
-	} break;
+	};
+
+	case DEC:	// Decrement memory by 1
+	{
+		BYTE result = --m_uFetched;
+		
+		m_oStatus.Flag.Zero = (result == 0x00);
+		m_oStatus.Flag.Negative = BIT_(7, result);
+
+		Write(m_uFetchedFrom, result);
+
+		return false;
+	}
 
 	default:
 		throw std::string("Unknown Opcode encountered (") + m_vecLookup[m_uOpcode].name + std::string(")");

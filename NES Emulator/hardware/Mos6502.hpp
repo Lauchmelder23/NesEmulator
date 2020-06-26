@@ -90,19 +90,18 @@ class Mos6502
 public:
 	typedef union Status
 	{
-		Status() {}
-		BYTE Raw = 0b00000000;
+		BYTE Raw;
 
 		struct sFlags
 		{
-			BYTE Carry : 1 = 0;
-			BYTE Zero : 1 = 0;
-			BYTE Interrupt : 1 = 0;
-			BYTE Decimal : 1 = 0;
-			BYTE Break : 1 = 0;
-			BYTE Unused : 1 = 0;
-			BYTE Overflow : 1 = 0;
-			BYTE Negative : 1 = 0;
+			BYTE Negative : 1;
+			BYTE Overflow : 1;
+			BYTE Unused : 1;
+			BYTE Break : 1;
+			BYTE Decimal : 1;
+			BYTE Interrupt : 1;
+			BYTE Zero : 1;
+			BYTE Carry : 1;
 		} Flag;
 
 		std::string AsString()
