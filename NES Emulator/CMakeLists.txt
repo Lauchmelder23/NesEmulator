@@ -11,14 +11,21 @@ add_executable (nesemu "NES Emulator.cpp"
 target_include_directories (nesemu PRIVATE
 	hardware
 	${PROJECT_SOURCE_DIR}/SDLFramework/3rdparty/include/SDL
+	"${PROJECT_SOURCE_DIR}/NES Emulator/3rdparty/include"
 	${PROJECT_SOURCE_DIR}/SDLFramework/src/sdlf
 )
 
 target_link_libraries (nesemu PRIVATE
 	${PROJECT_SOURCE_DIR}/SDLFramework/3rdparty/lib/SDL2.lib
+	"${PROJECT_SOURCE_DIR}/NES Emulator/3rdparty/lib/SDL2_ttf.lib"
 	sdlf
 )
 
 add_custom_command (TARGET nesemu POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/SDLFramework/3rdparty/lib/SDL2.dll $<TARGET_FILE_DIR:nesemu>
+	COMMAND ${CMAKE_COMMAND} -E copy "${PROJECT_SOURCE_DIR}/NES Emulator/3rdparty/lib/libfreetype-6.dll" $<TARGET_FILE_DIR:nesemu>
+	COMMAND ${CMAKE_COMMAND} -E copy "${PROJECT_SOURCE_DIR}/NES Emulator/3rdparty/lib/SDL2_ttf.dll" $<TARGET_FILE_DIR:nesemu>
+	COMMAND ${CMAKE_COMMAND} -E copy "${PROJECT_SOURCE_DIR}/NES Emulator/3rdparty/lib/zlib1.dll" $<TARGET_FILE_DIR:nesemu>
+	COMMAND ${CMAKE_COMMAND} -E copy "${PROJECT_SOURCE_DIR}/NES Emulator/resources/PressStart2p.ttf" $<TARGET_FILE_DIR:nesemu>
+	COMMAND ${CMAKE_COMMAND} -E copy "${PROJECT_SOURCE_DIR}/NES Emulator/resources/nestest.nes" $<TARGET_FILE_DIR:nesemu>
 )
