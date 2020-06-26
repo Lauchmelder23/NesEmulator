@@ -16,7 +16,7 @@ jobs:
     - name: submodules-init
       uses: snickerbockers/submodules-init@v4
     - name: install dependencies
-      run: sudo apt install libsdl2-dev
+      run: sudo apt install cmake libsdl2-dev g++
     - name: run-cmakeix Makefiles, VS16Win64
       uses: lukka/run-cmake@v2.5
       with:
