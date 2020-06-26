@@ -11,13 +11,13 @@ add_executable (nesemu "NES Emulator.cpp"
 target_include_directories (nesemu PRIVATE
 	hardware
 	${SDL2_INCLUDE_DIRS}
-	${SDL2_TTF_INCLUDE_DIRS}
+	${SDL2TTF_INCLUDE_DIR}
 	${PROJECT_SOURCE_DIR}/SDLFramework/src/sdlf
 )
 
 target_link_libraries (nesemu PRIVATE
 	${SDL2_LIBRARIES}
-	${SDL2_TTF_LIBRARIES}
+	${SDL2_TTF_LIBRARY}
 	sdlf
 )
 
