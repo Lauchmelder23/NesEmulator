@@ -404,89 +404,105 @@ std::map<WORD, std::string> Mos6502::Disassemble(WORD begin, WORD end)
 		// Do different things depending on addressing mode
 		// Very ugly, but it works I guess. It's okay, this code doesn't need to be efficient
 
-		WORD opcodeAddress = ptr;
+		BYTE op = Read(ptr);
+		BYTE lo = Read(ptr + 1);
+		BYTE hi = Read(ptr + 2);
 		switch (i.addressMode)
 		{
 		case IMP:
-			ss << HEX("", Read(ptr), 2) << "\t\t  " << i.name << " ";
-			++opcodeAddress;
+			ss << HEX("", op, 2) << "\t\t  " << i.name << " \t";
+			ptr++;
 			break;
 
 		case ACC:
-			ss << HEX("", Read(ptr), 2) << "\t\t  " << i.name << " ";
+			ss << HEX("", op, 2) << "\t\t  " << i.name << " ";
 			ss << " %acc";
-			++opcodeAddress;
+			ptr++;
 			break;
 
 		case IMM:
-			ss << HEX("", Read(ptr), 2) << " " << HEX("", Read(ptr + 1), 2) << "\t  " << i.name << " ";
-			ss << HEX("#$", Read(++opcodeAddress), 2);
+			ss << HEX("", op, 2) << " " << HEX("", lo, 2) << "\t  " << i.name << " ";
+			ss << HEX("#$", lo, 2);
+			ptr += 2;
 			break;
 
 		case ZPG:
-			ss << HEX("", Read(ptr), 2) << " " << HEX("", Read(ptr + 1), 2) << "\t  " << i.name << " ";
-			ss << HEX("$00", Read(++opcodeAddress), 4);
+			ss << HEX("", op, 2) << " " << HEX("", hi, 2) << "\t  " << i.name << " ";
+			ss << HEX("$00", lo, 4);
+			ptr += 2;
 			break;
 
 		case ABS:
-			ss << HEX("", Read(ptr), 2) << " " << HEX("", Read(ptr + 1), 2) 
-				<< " " << HEX("", Read(ptr + 2), 2) << "\t  " << i.name << " ";
-			ss << HEX("$", TO_WORD(Read(++opcodeAddress), Read(++opcodeAddress)), 4);
-			break;
+		{
+			ss << HEX("", op, 2) << " " << HEX("", lo, 2)
+				<< " " << HEX("", hi, 2) << "\t  " << i.name << " ";
+			//BYTE lo = Read(++opcodeAddress);
+			//BYTE hi = Read(++opcodeAddress);
+			// WORD test = TO_WORD(Read(++opcodeAddress), Read(++opcodeAddress));
+			ss << HEX("$", TO_WORD(lo, hi), 4);
+			ptr += 3;
+		} break;
 
 		case REL:
-			ss << HEX("", Read(ptr), 2) << " " << HEX("", Read(ptr + 1), 2) << "\t  " << i.name << " ";
-			ss << HEX("$", ptr + (int8_t)Read(++opcodeAddress) + 2, 4);
+			ss << HEX("", op, 2) << " " << HEX("", lo, 2) << "\t  " << i.name << " ";
+			ss << HEX("$", ptr + (int8_t)lo + 2, 4);
+			ptr += 2;
 			break;
 
 		case IND:
-			ss << HEX("", Read(ptr), 2) << " " << HEX("", Read(ptr + 1), 2)
-				<< " " << HEX("", Read(ptr + 2), 2) << "\t  " << i.name << " ";
-			ss << "[" << HEX("$", TO_WORD(Read(++opcodeAddress), Read(++opcodeAddress)), 4) << "]";
+			ss << HEX("", op, 2) << " " << HEX("", lo, 2)
+				<< " " << HEX("", hi, 2) << "\t  " << i.name << " ";
+			ss << "[" << HEX("$", TO_WORD(lo, hi), 4) << "]";
+			ptr += 3;
 			break;
 
 		case ZPX:
-			ss << HEX("", Read(ptr), 2) << " " << HEX("", Read(ptr + 1), 2) << "\t  " << i.name << " ";
-			ss << "(" << HEX("$00", Read(++opcodeAddress), 4) << " + X)";
+			ss << HEX("", op, 2) << " " << HEX("", lo, 2) << "\t  " << i.name << " ";
+			ss << "(" << HEX("$00", lo, 4) << " + X)";
+			ptr += 2;
 			break;
 
 		case ZPY:
-			ss << HEX("", Read(ptr), 2) << " " << HEX("", Read(ptr + 1), 2) << "\t  " << i.name << " ";
-			ss << "(" << HEX("$00", Read(++opcodeAddress), 4) << " + Y)";
+			ss << HEX("", op, 2) << " " << HEX("", lo, 2) << "\t  " << i.name << " ";
+			ss << "(" << HEX("$00", lo, 4) << " + Y)";
+			ptr += 2;
 			break;
 
 		case ABX:
-			ss << HEX("", Read(ptr), 2) << " " << HEX("", Read(ptr + 1), 2)
-				<< " " << HEX("", Read(ptr + 2), 2) << "\t  " << i.name << " ";
-			ss << "(" << HEX("$", TO_WORD(Read(++opcodeAddress), Read(++opcodeAddress)), 4) << " + X)";
+			ss << HEX("", op, 2) << " " << HEX("", lo, 2)
+				<< " " << HEX("", hi, 2) << "\t  " << i.name << " ";
+			ss << "(" << HEX("$", TO_WORD(lo, hi), 4) << " + X)";
+			ptr += 3;
 			break;
 
 		case ABY:
-			ss << HEX("", Read(ptr), 2) << " " << HEX("", Read(ptr + 1), 2)
-				<< " " << HEX("", Read(ptr + 2), 2) << "\t  " << i.name << " ";
-			ss << "(" << HEX("$", TO_WORD(Read(++opcodeAddress), Read(++opcodeAddress)), 4) << " + Y)";
+			ss << HEX("", op, 2) << " " << HEX("", lo, 2)
+				<< " " << HEX("", hi, 2) << "\t  " << i.name << " ";
+			ss << "(" << HEX("$", TO_WORD(lo, hi), 4) << " + Y)";
+			ptr += 3;
 			break;
 
 		case IDX:
-			ss << HEX("", Read(ptr), 2) << " " << HEX("", Read(ptr + 1), 2)
-				<< " " << HEX("", Read(ptr + 2), 2) << "\t  " << i.name << " ";
-			ss << "[" << HEX("$", TO_WORD(Read(++opcodeAddress), Read(++opcodeAddress)), 4) << " + X]";
+			ss << HEX("", op, 2) << " " << HEX("", lo, 2)
+				<< " " << HEX("", hi, 2) << "\t  " << i.name << " ";
+			ss << "[" << HEX("$", TO_WORD(lo, hi), 4) << " + X]";
+			ptr += 3;
 			break;
 
 		case IDY:
-			ss << HEX("", Read(ptr), 2) << " " << HEX("", Read(ptr + 1), 2)
-				<< " " << HEX("", Read(ptr + 2), 2) << "\t  " << i.name << " ";
-			ss << "([" << HEX("$", TO_WORD(Read(++opcodeAddress), Read(++opcodeAddress)), 4) << "] + Y)";
+			ss << HEX("", op, 2) << " " << HEX("", lo, 2)
+				<< " " << HEX("", hi, 2) << "\t  " << i.name << " ";
+			ss << "([" << HEX("$", TO_WORD(lo, hi), 4) << "] + Y)";
+			ptr += 3;
 			break;
 
 		default:
 			ss << "(Unknown addressing mode)";
-			++opcodeAddress;
+			ptr++;
 			break;
 		}
 
 		disassemble.insert(std::make_pair(ptr, ss.str()));
-		ptr = opcodeAddress;
 	}
 
 	return disassemble;
@@ -600,7 +616,7 @@ bool Mos6502::Execute()
 	}
 
 	default:
-		return false;
+		throw "Unknown Opcode encountered";
 	}
 }
 

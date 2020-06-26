@@ -14,7 +14,7 @@ class NESWindow : public sf::IWindow
 {
 public:
 	NESWindow() :
-		IWindow(sf::Vec2u(SCREEN_WIDTH, SCREEN_HEIGHT) * SCALE + sf::Vec2u(500, 100), sf::Vec2i(100, 100), "NESemu", 
+		IWindow(sf::Vec2u(SCREEN_WIDTH, SCREEN_HEIGHT) * SCALE, sf::Vec2i(100, 100), "NESemu", 
 			SDL_WINDOW_SHOWN, SDL_RENDERER_TARGETTEXTURE),
 		m_pTexture(nullptr)
 	{
@@ -24,6 +24,7 @@ public:
 private:
 	virtual bool OnCreate() override
 	{
+		// Create the NES screen
 		m_pTexture = SDL_CreateTexture(m_pRenderer, SDL_PIXELFORMAT_RGB888, 
 			SDL_TextureAccess::SDL_TEXTUREACCESS_TARGET, SCREEN_WIDTH, SCREEN_HEIGHT);
 
@@ -36,6 +37,8 @@ private:
 		m_pScreen->w = SCREEN_WIDTH * SCALE;
 		m_pScreen->h = SCREEN_HEIGHT * SCALE;
 
+		// Feed in some dummy byte code for testing
+		// TODO: Remove
 		std::stringstream ss;
 		ss << "A2 0A 8E 00 00 A2 03 8E 01 00 AC 00 00 A9 00 18 6D 01 00 88 D0 FA 8D 02 00 EA EA EA";
 		WORD offset = 0x8000;
@@ -46,15 +49,22 @@ private:
 			m_oNes.Write(offset++, static_cast<BYTE>(std::stoul(b, nullptr, 16)));
 		}
 
+		// Disassemble the program
 		m_mapDisassemble = m_oNes.m_oCPU.Disassemble(0x8000, 0x9000);
 
+		// Set reset vectors
 		m_oNes.Write(0xFFFC, 0x00);
 		m_oNes.Write(0xFFFD, 0x80);
 
+		// Boot the NES
 		m_oNes.m_oCPU.Reset();
 
 		return true;
 	}
+
+
+
+
 
 	virtual bool OnEvent(const SDL_Event& event)
 	{
@@ -65,16 +75,23 @@ private:
 				auto disas = m_mapDisassemble.find(m_oNes.m_oCPU.m_uPC);
 				if (disas != m_mapDisassemble.end())
 					std::cout << disas->second << "\t\t"
-					<< "A=" << m_oNes.m_oCPU.m_uAcc << ", "
-					<< "X=" << m_oNes.m_oCPU.m_uX << ", "
-					<< "Y=" << m_oNes.m_oCPU.m_uY << ", "
-					<< "S=" << m_oNes.m_oCPU.m_uSP << ", "
-					<< "F=" << m_oNes.m_oCPU.m_oStatus.Raw << std::endl;
+					<< "A=" << (WORD)m_oNes.m_oCPU.m_uAcc << ", "
+					<< "X=" << (WORD)m_oNes.m_oCPU.m_uX << ", "
+					<< "Y=" << (WORD)m_oNes.m_oCPU.m_uY << ", "
+					<< "S=" << (WORD)m_oNes.m_oCPU.m_uSP << ", "
+					<< "F=" << m_oNes.m_oCPU.m_oStatus.AsString() << std::endl;
 
-				do
+				try {
+					do
+					{
+						m_oNes.m_oCPU.Tick();
+					} while (!m_oNes.m_oCPU.Done());
+				}
+				catch (const char* s)
 				{
-					m_oNes.m_oCPU.Tick();
-				} while (!m_oNes.m_oCPU.Done());
+					std::cerr << s << std::endl;
+					m_atomWindowOpen = false;
+				}
 			}
 
 			if (event.key.keysym.scancode == SDL_SCANCODE_R)
@@ -92,10 +109,12 @@ private:
 		return true;
 	}
 
+
+
+
+
 	virtual void OnRender(SDL_Renderer* renderer) override
 	{
-		SDL_SetRenderDrawColor(m_pRenderer, 30, 0, 30, 255);
-		SDL_RenderClear(m_pRenderer);
 		// Set Render target to the texture
 		SDL_SetRenderTarget(m_pRenderer, m_pTexture);
 

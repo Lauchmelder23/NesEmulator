@@ -1,6 +1,7 @@
 #pragma once
 #include <functional>
 #include <map>
+#include <sstream>
 
 #include "../util.hpp"
 
@@ -103,6 +104,19 @@ public:
 			BYTE Overflow : 1 = 0;
 			BYTE Negative : 1 = 0;
 		} Flag;
+
+		std::string AsString()
+		{
+			std::stringstream ss;
+			ss << (Flag.Negative ? "N" : "n")
+				<< (Flag.Overflow ? "O" : "o")
+				<< (Flag.Unused ? "U" : "u")
+				<< (Flag.Break ? "B" : "b")
+				<< (Flag.Decimal ? "D" : "d")
+				<< (Flag.Interrupt ? "I" : "i")
+				<< (Flag.Zero ? "Z" : "z");
+			return ss.str();
+		}
 	} Status;
 
 	typedef BYTE AddressMode;
