@@ -18,6 +18,7 @@ target_include_directories (nesemu PRIVATE
 target_link_libraries (nesemu PRIVATE
 	${SDL2_LIBRARIES}
 	${SDL2_TTF_LIBRARY}
+	sdlf
 )
 
 if(NOT WIN32)
