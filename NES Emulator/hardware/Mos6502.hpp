@@ -162,6 +162,7 @@ private:
 private:
 	Bus* m_pBus;
 
+	WORD m_uFetchedFrom;
 	BYTE m_uFetched;
 	bool m_bSwitchedPage;
 	BYTE m_uOpcode, m_uCycles;

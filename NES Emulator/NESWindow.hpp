@@ -88,7 +88,7 @@ private:
 						m_oNes.m_oCPU.Tick();
 					} while (!m_oNes.m_oCPU.Done());
 				}
-				catch (const char* s)
+				catch (std::string s)
 				{
 					std::cerr << s << std::endl;
 					m_atomWindowOpen = false;

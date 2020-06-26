@@ -521,13 +521,34 @@ void Mos6502::Write(WORD address, BYTE value)
 
 bool Mos6502::Execute()
 {
-	/*
-	std::cout << std::hex << "$" << m_uPC <<
-		": " << m_vecLookup[m_uOpcode].name << 
-		"   (" << std::hex << static_cast<WORD>(m_uOpcode) << ")" << std::endl;
-	*/
 	switch (m_vecLookup[m_uOpcode].operation)
 	{
+	case ADC:	// ACC = ACC + M + C
+	{
+		WORD result = (WORD)m_uAcc + m_uFetched + m_oStatus.Flag.Carry;
+		m_oStatus.Flag.Carry = false;
+
+		m_oStatus.Flag.Carry = (result > 0xFF);
+		m_oStatus.Flag.Zero = !(result & 0xFF);
+		m_oStatus.Flag.Negative = (result & 0x80);
+
+		// If acc and fetched have the same sign AND the sum and fetched have a different sign
+		// then we have overflow
+		// Checks if the previous are both true --------------------------------------------------------|
+		//        Checks if signs are different ------------------------------------|                   |
+		//            Checks if signs are equal ---|                                |                   |
+		//                                         V                                V                   V
+		//                        |---------------------------------|   |-------------------------|   |----|
+		m_oStatus.Flag.Overflow = (~((WORD)m_uFetched ^ (WORD)m_uAcc) & (result ^ (WORD)m_uFetched) & 0x0080);
+
+		m_uAcc = result & 0x00FF;
+
+		if (m_uAcc == 0)
+			m_oStatus.Flag.Zero = true;
+
+		return true;
+	} break;
+
 	case AND:	// ACC = ACC & Memory
 	{
 		m_uAcc = m_uAcc & m_uFetched;
@@ -537,7 +558,24 @@ bool Mos6502::Execute()
 		m_oStatus.Flag.Negative = (m_uAcc & 0x80);
 
 		return true;
-	}
+	} break;
+
+	case ASL:
+	{
+		WORD result = (WORD)m_uFetched << 1;
+
+		m_oStatus.Flag.Carry = (result & 0x0100);
+		m_oStatus.Flag.Zero = ((result & 0x00FF) == 0);
+		m_oStatus.Flag.Negative = (result & 0x0080);
+
+		if (m_vecLookup[m_uOpcode].addressMode == ACC)
+			m_uAcc = (result & 0x00FF);
+		else
+			Write(m_uFetchedFrom, result & 0x00FF);
+
+		return 0;
+
+	} break;
 
 	case BCC:	// Branch on Carry Clear
 	{
@@ -553,7 +591,7 @@ bool Mos6502::Execute()
 		}
 
 		return false;
-	}
+	} break;
 
 	case BCS:	// Branch on Carry Set
 	{
@@ -569,7 +607,7 @@ bool Mos6502::Execute()
 		}
 
 		return false;
-	}
+	} break;
 
 	case BNE:	// Branch on not equal (Z = 0)
 	{
@@ -585,7 +623,7 @@ bool Mos6502::Execute()
 		}
 
 		return false;
-	}
+	} break;
 
 	case BEQ:	// Branch on equal (Z = 1)
 	{
@@ -601,7 +639,7 @@ bool Mos6502::Execute()
 		}
 
 		return false;
-	}
+	} break;
 
 	case RTI:	// Return from interrupt
 	{
@@ -614,16 +652,18 @@ bool Mos6502::Execute()
 		m_uPC = TO_WORD(Pop(), Pop());
 
 		return false;
-	}
+	} break;
 
 	default:
-		throw "Unknown Opcode encountered";
-	}
+		throw std::string("Unknown Opcode encountered (") + m_vecLookup[m_uOpcode].name + std::string(")");
+		break;
+	} 
 }
 
 BYTE Mos6502::Fetch()
 {
 	m_bSwitchedPage = false;
+	m_uFetchedFrom = 0x0000;
 	switch (m_vecLookup[m_uOpcode].addressMode)
 	{
 	case IMP:
@@ -633,17 +673,18 @@ BYTE Mos6502::Fetch()
 		SERVE(m_uAcc);
 
 	case IMM:
-		SERVE(Read(m_uPC++));
+		m_uFetchedFrom = m_uPC++;
+		SERVE(Read(m_uFetchedFrom));
 
 	case ZPG:
-		SERVE(Read(0x00FF & Read(m_uPC++)));
+		m_uFetchedFrom = (0x00FF & Read(m_uPC++));
+		SERVE(Read(m_uFetchedFrom));
 
 	case ABS:
 		// I pray to god that the Read()'s are executed in order or else
 		// the byte might be BE instead of LE
-		SERVE(Read(
-			TO_WORD(Read(m_uPC++), Read(m_uPC++))
-		));
+		m_uFetchedFrom = TO_WORD(Read(m_uPC++), Read(m_uPC++));
+		SERVE(Read(m_uFetchedFrom));
 
 	case REL:
 		SERVE(Read(m_uPC++));
@@ -652,49 +693,49 @@ BYTE Mos6502::Fetch()
 	{
 		BYTE lo = Read(m_uPC++);
 		BYTE hi = Read(m_uPC++);
-		SERVE(Read(
-			TO_WORD(Read(TO_WORD(hi, lo + 0x01)), Read(TO_WORD(hi, lo)))
-		));
+		m_uFetchedFrom = TO_WORD(Read(TO_WORD(hi, lo + 0x01)), Read(TO_WORD(hi, lo)));
+		SERVE(Read(m_uFetchedFrom));
 	};
 
 	case ZPX:
 	{
 		BYTE lo = Read(m_uPC++);
 		m_bSwitchedPage = (lo + m_uX <= lo);	// If lo + X is less than lo then we wrapped around
-
-		SERVE(Read(TO_WORD(lo + m_uX, 0x00)));
+		m_uFetchedFrom = TO_WORD(lo + m_uX, 0x00);
+		SERVE(Read(m_uFetchedFrom));
 	};
 
 	case ZPY:
 	{
 		BYTE lo = Read(m_uPC++);
 		m_bSwitchedPage = (lo + m_uY <= lo);	// If lo + X is less than lo then we wrapped around
-
-		SERVE(Read(TO_WORD(lo + m_uY, 0x00)));
+		m_uFetchedFrom = TO_WORD(lo + m_uY, 0x00);
+		SERVE(Read(m_uFetchedFrom));
 	};
 
 	case ABX:
 	{
 		BYTE lo = Read(m_uPC++);
 		BYTE hi = Read(m_uPC++);
-		WORD addr = TO_WORD(lo, hi) + m_uX;
-		m_bSwitchedPage = (((addr & 0xFF00) >> 8) != hi);
-		SERVE(Read(addr));
+		m_uFetchedFrom = TO_WORD(lo, hi) + m_uX;
+		m_bSwitchedPage = (((m_uFetchedFrom & 0xFF00) >> 8) != hi);
+		SERVE(Read(m_uFetchedFrom));
 	};
 
 	case ABY:
 	{
 		BYTE lo = Read(m_uPC++);
 		BYTE hi = Read(m_uPC++);
-		WORD addr = TO_WORD(lo, hi) + m_uY;
-		m_bSwitchedPage = (((addr & 0xFF00) >> 8) != hi);
-		SERVE(Read(addr));
+		WORD m_uFetchedFrom = TO_WORD(lo, hi) + m_uY;
+		m_bSwitchedPage = (((m_uFetchedFrom & 0xFF00) >> 8) != hi);
+		SERVE(Read(m_uFetchedFrom));
 	};
 
 	case IDX:
 	{
 		BYTE offset = Read(m_uPC++);
-		SERVE(Read(TO_WORD(Read(offset + m_uX), Read(offset + m_uX + 1))));
+		m_uFetchedFrom = TO_WORD(Read(offset + m_uX), Read(offset + m_uX + 1));
+		SERVE(Read(m_uFetchedFrom));
 	};
 
 	case IDY:
@@ -703,10 +744,10 @@ BYTE Mos6502::Fetch()
 		BYTE lo = Read(offset);
 		BYTE hi = Read(offset + 1);
 
-		WORD addr = TO_WORD(lo, hi) + m_uY;
-		m_bSwitchedPage = (((addr & 0xFF00) >> 8) != hi);
+		WORD m_uFetchedFrom = TO_WORD(lo, hi) + m_uY;
+		m_bSwitchedPage = (((m_uFetchedFrom & 0xFF00) >> 8) != hi);
 
-		SERVE(Read(addr));
+		SERVE(Read(m_uFetchedFrom));
 	};
 
 	default:
