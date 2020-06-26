@@ -4,6 +4,7 @@
 cmake_minimum_required (VERSION 3.8)
 
 set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR})
 
 if(WIN32)
 	set(SDL2_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/SDLFramework/3rdparty/include/SDL)
