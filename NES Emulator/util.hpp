@@ -15,4 +15,4 @@ typedef uint32_t DWORD;
 #define TO_WORD(lo, hi) ((static_cast<WORD>(hi) << 8) | lo)	// Assembles a WORD from two BYTES
 #define HEX(p, x, w) p << std::setfill('0') << std::setw(w) << std::hex << std::uppercase << (WORD)x // fancy hex output
 
-#define BIT_(n, x) (x & (1 << n))	// Masks the input with the bit at position n
+#define BIT_(n, x) ((x & (1 << n)) >> n)	// Masks the input with the bit at position n

@@ -1,5 +1,6 @@
 #include "NESWindow.hpp"
 #include <iostream>
+#include <fstream>
 
 bool NESWindow::OnCreate()
 {
@@ -117,16 +118,23 @@ void NESWindow::OnClose()
 
 void NESWindow::PrintCurrentInstruction()
 {
-	std::cout << "(" << std::dec << m_oNes.m_oCPU.GetCycles() << ") " << HEX("$", m_oNes.m_oCPU.m_uPC, 4) << "  ";
+	std::stringstream ss;
+	ss << "(" << std::dec << m_oNes.m_oCPU.GetCycles() << ") " << HEX("$", m_oNes.m_oCPU.m_uPC, 4) << "  ";
 	auto disas = m_mapDisassemble.find(m_oNes.m_oCPU.m_uPC);
 	if (disas != m_mapDisassemble.end())
-		std::cout << disas->second << "\t\t";
-	std::cout
+		ss << disas->second << "\t\t";
+	ss
 		<< "A=" << (WORD)m_oNes.m_oCPU.m_uAcc << ", "
 		<< "X=" << (WORD)m_oNes.m_oCPU.m_uX << ", "
 		<< "Y=" << (WORD)m_oNes.m_oCPU.m_uY << ", "
 		<< "S=" << (WORD)m_oNes.m_oCPU.m_uSP << ", "
 		<< "F=" << m_oNes.m_oCPU.m_oStatus.AsString() << " (" << HEX("", m_oNes.m_oCPU.m_oStatus.Raw, 2) << ")" << std::endl;
+
+	std::cout << ss.str();
+
+	std::ofstream file("dump.log", std::ios::app);
+	file.write(ss.str().c_str(), ss.str().length());
+	file.close();
 }
 
 void NESWindow::RenderMemoryMap()

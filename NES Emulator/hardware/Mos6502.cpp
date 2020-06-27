@@ -3,6 +3,7 @@
 
 #include <sstream>
 #include <string.h>
+#include <iostream>
 
 Mos6502::Mos6502() :
 	m_pBus(nullptr),
@@ -335,7 +336,7 @@ void Mos6502::Reset()
 	m_uX = 0x00;
 	m_uY = 0x00;
 	m_uSP = 0xFD;
-	m_oStatus.Raw = 0x34;
+	m_oStatus.Raw = 0x24;
 	m_uCycles = 7;
 	m_uCyclesTotal = 0;
 
@@ -418,7 +419,7 @@ std::map<WORD, std::string> Mos6502::Disassemble(WORD begin, WORD end)
 
 		case ZPG:
 			ss << HEX("", op, 2) << " " << HEX("", hi, 2) << "\t  " << i.name << " ";
-			ss << HEX("$00", lo, 4);
+			ss << HEX("$", lo, 2);
 			break;
 
 		case ABS:
@@ -444,12 +445,12 @@ std::map<WORD, std::string> Mos6502::Disassemble(WORD begin, WORD end)
 
 		case ZPX:
 			ss << HEX("", op, 2) << " " << HEX("", lo, 2) << "\t  " << i.name << " ";
-			ss << "(" << HEX("$00", lo, 4) << " + X)";
+			ss << "(" << HEX("$", lo, 2) << " + X)";
 			break;
 
 		case ZPY:
 			ss << HEX("", op, 2) << " " << HEX("", lo, 2) << "\t  " << i.name << " ";
-			ss << "(" << HEX("$00", lo, 4) << " + Y)";
+			ss << "(" << HEX("$", lo, 2) << " + Y)";
 			break;
 
 		case ABX:
@@ -587,7 +588,7 @@ bool Mos6502::Execute()
 
 	case BEQ:	// Branch on equal (Z = 1)
 	{
-		if (!m_oStatus.Flag.Zero)
+		if (m_oStatus.Flag.Zero)
 		{
 			m_uCycles++;
 			WORD jumpTo = m_uPC + static_cast<int8_t>(m_uFetched);	// TODO: If something breaks, its here
@@ -849,6 +850,8 @@ bool Mos6502::Execute()
 		Push(m_uPC & 0x00FF);
 
 		m_uPC = m_uFetchedFrom;
+
+		return false;
 	}
 
 	case LDA:	// Load Accumulator
@@ -857,6 +860,7 @@ bool Mos6502::Execute()
 
 		m_oStatus.Flag.Zero = (m_uAcc == 0x00);
 		m_oStatus.Flag.Negative = BIT_(7, m_uAcc);
+		// std::cout << "Iosdosidoi" << BIT_(7, m_uAcc) << std::endl;
 
 		return true;
 	}
