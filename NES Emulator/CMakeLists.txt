@@ -6,10 +6,12 @@ cmake_minimum_required (VERSION 3.8)
 # Add source to this project's executable.
 add_executable (nesemu "NES Emulator.cpp"
 	"NESWindow.hpp" "NESWindow.cpp"
- "hardware/Bus.cpp" "hardware/Mos6502.cpp")
+ "hardware/Bus.cpp" "hardware/Mos6502.cpp"
+ "hardware/RP2C02.cpp" "hardware/Cartridge.cpp")
 
 target_include_directories (nesemu PRIVATE
 	hardware
+	hardware/mappers
 	${SDL2_INCLUDE_DIRS}
 	${SDL2TTF_INCLUDE_DIR}
 	${PROJECT_SOURCE_DIR}/SDLFramework/src/sdlf

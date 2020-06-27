@@ -2,6 +2,7 @@
 #include "Bus.hpp"
 
 #include <sstream>
+#include <string.h>
 
 Mos6502::Mos6502() :
 	m_pBus(nullptr),
@@ -334,13 +335,13 @@ void Mos6502::Reset()
 	m_uX = 0x00;
 	m_uY = 0x00;
 	m_uSP = 0xFD;
-	m_oStatus.Raw = 0b00000000;
-	m_oStatus.Flag.Unused = true;
+	m_oStatus.Raw = 0x34;
+	m_uCycles = 7;
+	m_uCyclesTotal = 0;
 
-	m_uPC = TO_WORD(Read(0xFFFC), Read(0xFFFD));	// 0xFFFC is the reset vector
+	m_uPC = 0xC000; //TO_WORD(Read(0xFFFC), Read(0xFFFD));	// 0xFFFC is the reset vector
 
 	m_uFetched = 0x00;
-	m_uCycles = 0;
 }
 
 void Mos6502::IRQ()
@@ -387,11 +388,10 @@ std::map<WORD, std::string> Mos6502::Disassemble(WORD begin, WORD end)
 	// Disassembles the RAM from $begin to $end
 	std::map<WORD, std::string> disassemble;
 
-	for (WORD ptr = begin; ptr <= end;)
+	for (DWORD ptr = begin; ptr <= end; ptr++)
 	{
 		Instruction i = m_vecLookup[Read(ptr)];
 		std::stringstream ss;
-		ss << HEX("$", ptr, 4) << "  ";
 
 		// Do different things depending on addressing mode
 		// Very ugly, but it works I guess. It's okay, this code doesn't need to be efficient
@@ -404,25 +404,21 @@ std::map<WORD, std::string> Mos6502::Disassemble(WORD begin, WORD end)
 		{
 		case IMP:
 			ss << HEX("", op, 2) << "\t\t  " << i.name << " \t";
-			ptr++;
 			break;
 
 		case ACC:
 			ss << HEX("", op, 2) << "\t\t  " << i.name << " ";
 			ss << " %acc";
-			ptr++;
 			break;
 
 		case IMM:
 			ss << HEX("", op, 2) << " " << HEX("", lo, 2) << "\t  " << i.name << " ";
 			ss << HEX("#$", lo, 2);
-			ptr += 2;
 			break;
 
 		case ZPG:
 			ss << HEX("", op, 2) << " " << HEX("", hi, 2) << "\t  " << i.name << " ";
 			ss << HEX("$00", lo, 4);
-			ptr += 2;
 			break;
 
 		case ABS:
@@ -433,32 +429,27 @@ std::map<WORD, std::string> Mos6502::Disassemble(WORD begin, WORD end)
 			//BYTE hi = Read(++opcodeAddress);
 			// WORD test = TO_WORD(Read(++opcodeAddress), Read(++opcodeAddress));
 			ss << HEX("$", TO_WORD(lo, hi), 4);
-			ptr += 3;
 		} break;
 
 		case REL:
 			ss << HEX("", op, 2) << " " << HEX("", lo, 2) << "\t  " << i.name << " ";
 			ss << HEX("$", ptr + (int8_t)lo + 2, 4);
-			ptr += 2;
 			break;
 
 		case IND:
 			ss << HEX("", op, 2) << " " << HEX("", lo, 2)
 				<< " " << HEX("", hi, 2) << "\t  " << i.name << " ";
 			ss << "[" << HEX("$", TO_WORD(lo, hi), 4) << "]";
-			ptr += 3;
 			break;
 
 		case ZPX:
 			ss << HEX("", op, 2) << " " << HEX("", lo, 2) << "\t  " << i.name << " ";
 			ss << "(" << HEX("$00", lo, 4) << " + X)";
-			ptr += 2;
 			break;
 
 		case ZPY:
 			ss << HEX("", op, 2) << " " << HEX("", lo, 2) << "\t  " << i.name << " ";
 			ss << "(" << HEX("$00", lo, 4) << " + Y)";
-			ptr += 2;
 			break;
 
 		case ABX:
@@ -472,26 +463,22 @@ std::map<WORD, std::string> Mos6502::Disassemble(WORD begin, WORD end)
 			ss << HEX("", op, 2) << " " << HEX("", lo, 2)
 				<< " " << HEX("", hi, 2) << "\t  " << i.name << " ";
 			ss << "(" << HEX("$", TO_WORD(lo, hi), 4) << " + Y)";
-			ptr += 3;
 			break;
 
 		case IDX:
 			ss << HEX("", op, 2) << " " << HEX("", lo, 2)
 				<< " " << HEX("", hi, 2) << "\t  " << i.name << " ";
 			ss << "[" << HEX("$", TO_WORD(lo, hi), 4) << " + X]";
-			ptr += 3;
 			break;
 
 		case IDY:
 			ss << HEX("", op, 2) << " " << HEX("", lo, 2)
 				<< " " << HEX("", hi, 2) << "\t  " << i.name << " ";
 			ss << "([" << HEX("$", TO_WORD(lo, hi), 4) << "] + Y)";
-			ptr += 3;
 			break;
 
 		default:
 			ss << "(Unknown addressing mode)";
-			ptr++;
 			break;
 		}
 
@@ -503,12 +490,12 @@ std::map<WORD, std::string> Mos6502::Disassemble(WORD begin, WORD end)
 
 BYTE Mos6502::Read(WORD address)
 {
-	return m_pBus->Read(address);
+	return m_pBus->ReadCPU(address);
 }
 
 void Mos6502::Write(WORD address, BYTE value)
 {
-	m_pBus->Write(address, value);
+	m_pBus->WriteCPU(address, value);
 }
 
 bool Mos6502::Execute()
@@ -861,7 +848,7 @@ bool Mos6502::Execute()
 		Push((m_uPC & 0xFF00) >> 8);
 		Push(m_uPC & 0x00FF);
 
-		m_uPC = m_uFetched;
+		m_uPC = m_uFetchedFrom;
 	}
 
 	case LDA:	// Load Accumulator
@@ -994,14 +981,18 @@ bool Mos6502::Execute()
 		m_oStatus.Flag.Break = 0;
 
 		// Retrieve PC from stack
-		m_uPC = TO_WORD(Pop(), Pop());
+		BYTE lo = Pop();
+		BYTE hi = Pop();
+		m_uPC = TO_WORD(lo, hi);
 
 		return false;
 	};
 
 	case RTS:	// Return from subroutine
 	{
-		m_uPC = TO_WORD(Pop(), Pop());
+		BYTE lo = Pop();
+		BYTE hi = Pop();
+		m_uPC = TO_WORD(lo, hi);
 		m_uPC++;
 
 		return false;

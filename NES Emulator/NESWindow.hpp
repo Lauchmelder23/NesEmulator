@@ -28,6 +28,7 @@ public:
 private:
 	bool OnCreate() override;
 	bool OnEvent(const SDL_Event& event);
+	bool OnUpdate(double frametime) override;
 	void OnRender(SDL_Renderer* renderer) override;
 	void OnClose() override;
 
@@ -44,6 +45,7 @@ private:
 	SDL_Rect* m_pOutRect;
 
 	Bus m_oNes;
+	Cartridge* m_pCartridge;
 
 	int fontHeight = 0;
 

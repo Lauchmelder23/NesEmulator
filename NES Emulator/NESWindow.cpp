@@ -34,24 +34,10 @@ bool NESWindow::OnCreate()
 	TTF_GlyphMetrics(m_pFont, '0', &minX, &maxX, &minY, &maxY, &advance);
 	fontHeight = maxY;
 
-	// Feed in some dummy byte code for testing
-	// TODO: Remove
-	std::stringstream ss;
-	ss << "A2 0A 8E 00 00 A2 03 8E 01 00 AC 00 00 A9 00 18 6D 01 00 88 D0 FA 8D 02 00 EA EA EA";
-	WORD offset = 0x8000;
-	while (!ss.eof())
-	{
-		std::string b;
-		ss >> b;
-		m_oNes.Write(offset++, static_cast<BYTE>(std::stoul(b, nullptr, 16)));
-	}
+	m_pCartridge = new Cartridge("nestest.nes");
+	m_oNes.InsertCartridge(m_pCartridge);
 
-	// Disassemble the program
-	m_mapDisassemble = m_oNes.m_oCPU.Disassemble(0x8000, 0x9000);
-
-	// Set reset vectors
-	m_oNes.Write(0xFFFC, 0x00);
-	m_oNes.Write(0xFFFD, 0x80);
+	m_mapDisassemble = m_oNes.m_oCPU.Disassemble(0x8000, 0xFFFF);
 
 	// Boot the NES
 	m_oNes.m_oCPU.Reset();
@@ -65,20 +51,7 @@ bool NESWindow::OnEvent(const SDL_Event& event)
 	{
 		if (event.key.keysym.scancode == SDL_SCANCODE_SPACE)
 		{
-			PrintCurrentInstruction();
-			RenderMemoryMap();
-
-			try {
-				do
-				{
-					m_oNes.m_oCPU.Tick();
-				} while (!m_oNes.m_oCPU.Done());
-			}
-			catch (std::string s)
-			{
-				std::cerr << s << std::endl;
-				m_atomWindowOpen = false;
-			}
+			
 		}
 
 		if (event.key.keysym.scancode == SDL_SCANCODE_R)
@@ -94,6 +67,24 @@ bool NESWindow::OnEvent(const SDL_Event& event)
 	}
 
 	return true;
+}
+
+bool NESWindow::OnUpdate(double frametime)
+{
+	try {
+		do
+		{
+			m_oNes.m_oCPU.Tick();
+		} while (!m_oNes.m_oCPU.Done());
+	}
+	catch (std::string s)
+	{
+		std::cerr << s << std::endl;
+		return false;
+	}
+
+	PrintCurrentInstruction();
+	RenderMemoryMap();
 }
 
 void NESWindow::OnRender(SDL_Renderer* renderer)
@@ -126,15 +117,16 @@ void NESWindow::OnClose()
 
 void NESWindow::PrintCurrentInstruction()
 {
+	std::cout << "(" << std::dec << m_oNes.m_oCPU.GetCycles() << ") " << HEX("$", m_oNes.m_oCPU.m_uPC, 4) << "  ";
 	auto disas = m_mapDisassemble.find(m_oNes.m_oCPU.m_uPC);
 	if (disas != m_mapDisassemble.end())
-		std::cout << "(" << m_oNes.m_oCPU.GetCycles() << ") "
-		<< disas->second << "\t\t"
+		std::cout << disas->second << "\t\t";
+	std::cout
 		<< "A=" << (WORD)m_oNes.m_oCPU.m_uAcc << ", "
 		<< "X=" << (WORD)m_oNes.m_oCPU.m_uX << ", "
 		<< "Y=" << (WORD)m_oNes.m_oCPU.m_uY << ", "
 		<< "S=" << (WORD)m_oNes.m_oCPU.m_uSP << ", "
-		<< "F=" << m_oNes.m_oCPU.m_oStatus.AsString() << std::endl;
+		<< "F=" << m_oNes.m_oCPU.m_oStatus.AsString() << " (" << HEX("", m_oNes.m_oCPU.m_oStatus.Raw, 2) << ")" << std::endl;
 }
 
 void NESWindow::RenderMemoryMap()
