@@ -21,5 +21,6 @@ while True:
 
 	if orig_line != dump_line:
 		print("Difference in line " + str(line) + ": " + orig_line + " --- " + dump_line)
+		break
 
 	line += 1

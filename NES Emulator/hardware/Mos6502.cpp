@@ -24,7 +24,7 @@ Mos6502::Mos6502() :
 		MAKE(UOP, IMP, 2),
 		MAKE(PHP, IMP, 3),
 		MAKE(ORA, IMM, 2),
-		MAKE(ASL, IMP, 2),
+		MAKE(ASL, ACC, 2),
 		MAKE(UOP, IMP, 2),
 		MAKE(UOP, IMP, 2),
 		MAKE(ORA, ABS, 4),
@@ -96,7 +96,7 @@ Mos6502::Mos6502() :
 		MAKE(UOP, IMP, 2),
 		MAKE(PHA, IMP, 3),
 		MAKE(EOR, IMM, 2),
-		MAKE(LSR, IMP, 2),
+		MAKE(LSR, ACC, 2),
 		MAKE(UOP, IMP, 2),
 		MAKE(JMP, ABS, 3),
 		MAKE(EOR, ABS, 4),
@@ -509,17 +509,17 @@ bool Mos6502::Execute()
 		m_oStatus.Flag.Carry = false;
 
 		m_oStatus.Flag.Carry = BIT_(8, result);
-		m_oStatus.Flag.Zero = (result == 0);
+		m_oStatus.Flag.Zero = ((result & 0x00FF) == 0);
 		m_oStatus.Flag.Negative = BIT_(7, result);
 
 		// If accumulator and fetched have the same sign AND the sum and fetched have a different sign
 		// then we have overflow
-		// Checks if the previous are both true --------------------------------------------------------|
-		//        Checks if signs are different ------------------------------------|                   |
-		//            Checks if signs are equal ---|                                |                   |
-		//                                         V                                V                   V
-		//                        |---------------------------------|   |-------------------------|   |----|
-		m_oStatus.Flag.Overflow = (~((WORD)m_uFetched ^ (WORD)m_uAcc) & (result ^ (WORD)m_uFetched) & 0x0080);
+		// Checks if the previous are both true -----------------------------------------------------|
+		//        Checks if signs are different ------------------------------------|                |
+		//            Checks if signs are equal ---|                                |                |
+		//                                         V                                V                V
+		//                        |---------------------------------|   |---------------------|   |----|
+		m_oStatus.Flag.Overflow = (~((WORD)m_uFetched ^ (WORD)m_uAcc) & (result ^ (WORD)m_uAcc) & 0x0080) >> 7;
 
 		m_uAcc = result & 0x00FF;
 
@@ -607,8 +607,8 @@ bool Mos6502::Execute()
 		BYTE result = m_uAcc & m_uFetched;
 		
 		m_oStatus.Flag.Zero = (result == 0x00);
-		m_oStatus.Flag.Negative = BIT_(7, result);
-		m_oStatus.Flag.Overflow = BIT_(6, result);
+		m_oStatus.Flag.Negative = BIT_(7, m_uFetched);
+		m_oStatus.Flag.Overflow = BIT_(6, m_uFetched);
 
 		return false;
 	};
@@ -860,7 +860,6 @@ bool Mos6502::Execute()
 
 		m_oStatus.Flag.Zero = (m_uAcc == 0x00);
 		m_oStatus.Flag.Negative = BIT_(7, m_uAcc);
-		// std::cout << "Iosdosidoi" << BIT_(7, m_uAcc) << std::endl;
 
 		return true;
 	}
@@ -1004,22 +1003,21 @@ bool Mos6502::Execute()
 
 	case SBC:	// ACC = ACC - M - C
 	{
-		WORD result = (WORD)m_uAcc - m_uFetched - m_oStatus.Flag.Carry;
+		WORD result = (WORD)m_uAcc - m_uFetched - (1 - m_oStatus.Flag.Carry);
 		m_oStatus.Flag.Carry = false;
 
-		m_oStatus.Flag.Carry = BIT_(8, result);
-		m_oStatus.Flag.Zero = (result == 0x00);
+		m_oStatus.Flag.Carry = !BIT_(8, result);
+		m_oStatus.Flag.Zero = ((result & 0x00FF) == 0x00);
 		m_oStatus.Flag.Negative = BIT_(7, result);
 
 		// If accumulator and fetched have the same sign AND the sum and fetched have a different sign
 		// then we have overflow
-		// Checks if the previous are both true --------------------------------------------------------|
-		//        Checks if signs are different ------------------------------------|                   |
-		//            Checks if signs are equal ---|                                |                   |
-		//                                         V                                V                   V
-		//                        |---------------------------------|   |-------------------------|   |----|
-		m_oStatus.Flag.Overflow = (~((WORD)m_uFetched ^ (WORD)m_uAcc) & (result ^ (WORD)m_uFetched) & 0x0080);
-		m_oStatus.Flag.Zero = (result == 0x00);
+		// Checks if the previous are both true ----------------------------------------------------|
+		//        Checks if signs are different ------------------------------------|               |
+		//            Checks if signs are equal ---|                                |               |
+		//                                         V                                V               V
+		//                        |--------------------------------|   |---------------------|   |----|
+		m_oStatus.Flag.Overflow = (((WORD)m_uFetched ^ (WORD)m_uAcc) & (result ^ (WORD)m_uAcc) & 0x0080) >> 7;
 
 		m_uAcc = result & 0x00FF;
 
@@ -1111,9 +1109,6 @@ bool Mos6502::Execute()
 	case TXS:	// X -> SP
 	{
 		m_uSP = m_uX;
-
-		m_oStatus.Flag.Zero = (m_uX == 0x00);
-		m_oStatus.Flag.Negative = BIT_(7, m_uX);
 
 		return false;
 	}
