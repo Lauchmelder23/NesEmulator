@@ -16,7 +16,7 @@ Mos6502::Mos6502() :
 		// 0x00
 		MAKE(BRK, IMP, 7),
 		MAKE(ORA, IDX, 6),
-		MAKE(UOP, IMP, 2),
+		MAKE(JAM, IMP, 0),
 		MAKE(UOP, IMP, 2),
 		MAKE(UOP, IMP, 2),
 		MAKE(ORA, ZPG, 3),
@@ -34,7 +34,7 @@ Mos6502::Mos6502() :
 		// 0x10
 		MAKE(BPL, REL, 2),
 		MAKE(ORA, IDY, 5),
-		MAKE(UOP, IMP, 2),
+		MAKE(JAM, IMP, 0),
 		MAKE(UOP, IMP, 2),
 		MAKE(UOP, IMP, 2),
 		MAKE(ORA, ZPX, 4),
@@ -52,7 +52,7 @@ Mos6502::Mos6502() :
 		// 0x20
 		MAKE(JSR, ABS, 6),
 		MAKE(AND, IDX, 6),
-		MAKE(UOP, IMP, 2),
+		MAKE(JAM, IMP, 0),
 		MAKE(UOP, IMP, 2),
 		MAKE(BIT, ZPG, 3),
 		MAKE(AND, ZPG, 3),
@@ -70,7 +70,7 @@ Mos6502::Mos6502() :
 		// 0x30
 		MAKE(BMI, REL, 2),
 		MAKE(AND, IDY, 5),
-		MAKE(UOP, IMP, 2),
+		MAKE(JAM, IMP, 0),
 		MAKE(UOP, IMP, 2),
 		MAKE(UOP, IMP, 2),
 		MAKE(AND, ZPX, 4),
@@ -88,7 +88,7 @@ Mos6502::Mos6502() :
 		// 0x40
 		MAKE(RTI, IMP, 6),
 		MAKE(EOR, IDX, 6),
-		MAKE(UOP, IMP, 2),
+		MAKE(JAM, IMP, 0),
 		MAKE(UOP, IMP, 2),
 		MAKE(UOP, IMP, 2),
 		MAKE(EOR, ZPG, 3),
@@ -106,7 +106,7 @@ Mos6502::Mos6502() :
 		// 0x50
 		MAKE(BVC, REL, 2),
 		MAKE(EOR, IDY, 5),
-		MAKE(UOP, IMP, 2),
+		MAKE(JAM, IMP, 0),
 		MAKE(UOP, IMP, 2),
 		MAKE(UOP, IMP, 2),
 		MAKE(EOR, ZPX, 4),
@@ -124,7 +124,7 @@ Mos6502::Mos6502() :
 		// 0x60
 		MAKE(RTS, IMP, 6),
 		MAKE(ADC, IDX, 6),
-		MAKE(UOP, IMP, 2),
+		MAKE(JAM, IMP, 0),
 		MAKE(UOP, IMP, 2),
 		MAKE(UOP, IMP, 2),
 		MAKE(ADC, ZPG, 3),
@@ -142,7 +142,7 @@ Mos6502::Mos6502() :
 		// 0x70
 		MAKE(BVS, REL, 2),
 		MAKE(ADC, IDY, 5),
-		MAKE(UOP, IMP, 2),
+		MAKE(JAM, IMP, 0),
 		MAKE(UOP, IMP, 2),
 		MAKE(UOP, IMP, 2),
 		MAKE(ADC, ZPX, 4),
@@ -178,7 +178,7 @@ Mos6502::Mos6502() :
 		// 0x90
 		MAKE(BCC, REL, 2),
 		MAKE(STA, IDY, 6),
-		MAKE(UOP, IMP, 2),
+		MAKE(JAM, IMP, 0),
 		MAKE(UOP, IMP, 2),
 		MAKE(STY, ZPX, 4),
 		MAKE(STA, ZPX, 4),
@@ -214,7 +214,7 @@ Mos6502::Mos6502() :
 		// 0xB0
 		MAKE(BCS, REL, 2),
 		MAKE(LDA, IDY, 5),
-		MAKE(UOP, IMP, 2),
+		MAKE(JAM, IMP, 0),
 		MAKE(UOP, IMP, 2),
 		MAKE(LDY, ZPX, 4),
 		MAKE(LDA, ZPX, 4),
@@ -250,7 +250,7 @@ Mos6502::Mos6502() :
 		// 0xD0
 		MAKE(BNE, REL, 2),
 		MAKE(CMP, IDY, 5),
-		MAKE(UOP, IMP, 2),
+		MAKE(JAM, IMP, 0),
 		MAKE(UOP, IMP, 2),
 		MAKE(UOP, IMP, 2),
 		MAKE(CMP, ZPX, 4),
@@ -286,7 +286,7 @@ Mos6502::Mos6502() :
 		// 0xF0
 		MAKE(BEQ, REL, 2),
 		MAKE(SBC, IDY, 5),
-		MAKE(UOP, IMP, 2),
+		MAKE(JAM, IMP, 0),
 		MAKE(UOP, IMP, 2),
 		MAKE(UOP, IMP, 2),
 		MAKE(SBC, ZPX, 4),
@@ -313,8 +313,8 @@ Mos6502::~Mos6502()
 
 void Mos6502::Tick()
 {
-	//if (m_uCyclesTotal == 8760)
-	//	__debugbreak();
+	if (m_uCyclesTotal == 10428)
+		__debugbreak();
 
 	if (m_uCycles == 0)
 	{
@@ -831,6 +831,11 @@ bool Mos6502::Execute()
 		return false;
 	}
 
+	case JAM:	// Literally halts the CPU and ends the universe
+	{
+		throw "CPU has been halted.";
+	}
+
 	case JMP:	// Jump to address
 	{
 		m_uPC = m_uFetchedFrom;
@@ -1159,23 +1164,23 @@ BYTE Mos6502::Fetch()
 	{
 		BYTE lo = Read(m_uPC++);
 		BYTE hi = Read(m_uPC++);
-		m_uFetchedFrom = TO_WORD(Read(TO_WORD(hi, lo + 0x01)), Read(TO_WORD(hi, lo)));
+		m_uFetchedFrom = TO_WORD(Read(TO_WORD(lo, hi)), Read(TO_WORD((lo + 0x01) & 0xFF, hi)), );
 		SERVE(Read(m_uFetchedFrom));
 	};
 
 	case ZPX:
 	{
 		BYTE lo = Read(m_uPC++);
-		m_bSwitchedPage = (lo + m_uX <= lo);	// If lo + X is less than lo then we wrapped around
-		m_uFetchedFrom = TO_WORD(lo + m_uX, 0x00);
+		m_bSwitchedPage = (lo + m_uX < lo);	// If lo + X is less than lo then we wrapped around
+		m_uFetchedFrom = TO_WORD((lo + m_uX) & 0xFF, 0x00);
 		SERVE(Read(m_uFetchedFrom));
 	};
 
 	case ZPY:
 	{
 		BYTE lo = Read(m_uPC++);
-		m_bSwitchedPage = (lo + m_uY <= lo);	// If lo + X is less than lo then we wrapped around
-		m_uFetchedFrom = TO_WORD(lo + m_uY, 0x00);
+		m_bSwitchedPage = (lo + m_uY < lo);	// If lo + X is less than lo then we wrapped around
+		m_uFetchedFrom = TO_WORD((lo + m_uY) & 0xFF, 0x00);
 		SERVE(Read(m_uFetchedFrom));
 	};
 
@@ -1192,7 +1197,7 @@ BYTE Mos6502::Fetch()
 	{
 		BYTE lo = Read(m_uPC++);
 		BYTE hi = Read(m_uPC++);
-		WORD m_uFetchedFrom = TO_WORD(lo, hi) + m_uY;
+		m_uFetchedFrom = TO_WORD(lo, hi) + m_uY;
 		m_bSwitchedPage = (((m_uFetchedFrom & 0xFF00) >> 8) != hi);
 		SERVE(Read(m_uFetchedFrom));
 	};
@@ -1208,7 +1213,7 @@ BYTE Mos6502::Fetch()
 	{
 		BYTE offset = Read(m_uPC++);
 		BYTE hi = Read((offset + 1) & 0xFF);
-		WORD m_uFetchedFrom = TO_WORD(Read(offset), hi) + m_uY;
+		m_uFetchedFrom = TO_WORD(Read(offset), hi) + m_uY;
 		m_bSwitchedPage = (((m_uFetchedFrom & 0xFF00) >> 8) != hi);
 
 		SERVE(Read(m_uFetchedFrom));

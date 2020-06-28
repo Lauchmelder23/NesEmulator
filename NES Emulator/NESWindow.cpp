@@ -38,7 +38,7 @@ bool NESWindow::OnCreate()
 	m_pCartridge = new Cartridge("nestest.nes");
 	m_oNes.InsertCartridge(m_pCartridge);
 
-	m_mapDisassemble = m_oNes.m_oCPU.Disassemble(0x8000, 0xFFFF);
+	m_mapDisassemble = m_oNes.m_oCPU.Disassemble(0x0000, 0xFFFF);
 
 	// Boot the NES
 	m_oNes.m_oCPU.Reset();
@@ -119,7 +119,7 @@ void NESWindow::OnClose()
 void NESWindow::PrintCurrentInstruction()
 {
 	std::stringstream ss;
-	ss << "(" << std::dec << std::setfill('0') << std::setw(4) << m_oNes.m_oCPU.GetCycles() << ") " 
+	ss << "(" << std::dec << m_oNes.m_oCPU.GetCycles() << ") " 
 		<< HEX("$", m_oNes.m_oCPU.m_uPC, 4) << "  ";
 	auto disas = m_mapDisassemble.find(m_oNes.m_oCPU.m_uPC);
 	if (disas != m_mapDisassemble.end())

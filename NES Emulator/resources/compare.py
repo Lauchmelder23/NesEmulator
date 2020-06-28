@@ -15,7 +15,7 @@ while True:
 	dump_line = dump_line.split(")")[0]
 
 	orig_line = orig_line[:-1]
-	dump_line = dump_line[1:5]
+	dump_line = dump_line[1:]
 
 	if int(orig_line) != int(dump_line):
 		print("Difference in line " + str(line) + ": " + orig_line + " --- " + dump_line)

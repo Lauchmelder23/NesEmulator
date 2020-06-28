@@ -66,6 +66,11 @@
 #define UOP 0xFF
 #pragma endregion 
 
+// TODO: Implement
+#pragma region Illegal Opcodes
+#define JAM 0x38
+#pragma endregion
+
 ///////////////// Internal values for addressing modes /////////////////
 #pragma region AddrModes
 #define IMP 0x00
