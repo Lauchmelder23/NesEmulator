@@ -119,7 +119,8 @@ void NESWindow::OnClose()
 void NESWindow::PrintCurrentInstruction()
 {
 	std::stringstream ss;
-	ss << "(" << std::dec << m_oNes.m_oCPU.GetCycles() << ") " << HEX("$", m_oNes.m_oCPU.m_uPC, 4) << "  ";
+	ss << "(" << std::dec << std::setfill('0') << std::setw(4) << m_oNes.m_oCPU.GetCycles() << ") " 
+		<< HEX("$", m_oNes.m_oCPU.m_uPC, 4) << "  ";
 	auto disas = m_mapDisassemble.find(m_oNes.m_oCPU.m_uPC);
 	if (disas != m_mapDisassemble.end())
 		ss << disas->second << "\t\t";

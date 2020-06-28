@@ -60,7 +60,7 @@ Mos6502::Mos6502() :
 		MAKE(UOP, IMP, 2),
 		MAKE(PLP, IMP, 4),
 		MAKE(AND, IMM, 2),
-		MAKE(ROL, IMP, 2),
+		MAKE(ROL, ACC, 2),
 		MAKE(UOP, IMP, 2),
 		MAKE(BIT, ABS, 4),
 		MAKE(AND, ABS, 4),
@@ -123,7 +123,7 @@ Mos6502::Mos6502() :
 
 		// 0x60
 		MAKE(RTS, IMP, 6),
-		MAKE(ADC, INX, 6),
+		MAKE(ADC, IDX, 6),
 		MAKE(UOP, IMP, 2),
 		MAKE(UOP, IMP, 2),
 		MAKE(UOP, IMP, 2),
@@ -132,7 +132,7 @@ Mos6502::Mos6502() :
 		MAKE(UOP, IMP, 2),
 		MAKE(PLA, IMP, 4),
 		MAKE(ADC, IMM, 2),
-		MAKE(ROR, IMP, 2),
+		MAKE(ROR, ACC, 2),
 		MAKE(UOP, IMP, 2),
 		MAKE(JMP, IND, 5),
 		MAKE(ADC, ABS, 4),
@@ -313,6 +313,9 @@ Mos6502::~Mos6502()
 
 void Mos6502::Tick()
 {
+	//if (m_uCyclesTotal == 8760)
+	//	__debugbreak();
+
 	if (m_uCycles == 0)
 	{
 		m_uOpcode = Read(m_uPC);	// Read Opcode from memory
@@ -409,7 +412,7 @@ std::map<WORD, std::string> Mos6502::Disassemble(WORD begin, WORD end)
 
 		case ACC:
 			ss << HEX("", op, 2) << "\t\t  " << i.name << " ";
-			ss << " %acc";
+			ss << " A";
 			break;
 
 		case IMM:
@@ -418,19 +421,15 @@ std::map<WORD, std::string> Mos6502::Disassemble(WORD begin, WORD end)
 			break;
 
 		case ZPG:
-			ss << HEX("", op, 2) << " " << HEX("", hi, 2) << "\t  " << i.name << " ";
+			ss << HEX("", op, 2) << " " << HEX("", lo, 2) << "\t  " << i.name << " ";
 			ss << HEX("$", lo, 2);
 			break;
 
 		case ABS:
-		{
 			ss << HEX("", op, 2) << " " << HEX("", lo, 2)
 				<< " " << HEX("", hi, 2) << "\t  " << i.name << " ";
-			//BYTE lo = Read(++opcodeAddress);
-			//BYTE hi = Read(++opcodeAddress);
-			// WORD test = TO_WORD(Read(++opcodeAddress), Read(++opcodeAddress));
 			ss << HEX("$", TO_WORD(lo, hi), 4);
-		} break;
+		break;
 
 		case REL:
 			ss << HEX("", op, 2) << " " << HEX("", lo, 2) << "\t  " << i.name << " ";
@@ -440,7 +439,7 @@ std::map<WORD, std::string> Mos6502::Disassemble(WORD begin, WORD end)
 		case IND:
 			ss << HEX("", op, 2) << " " << HEX("", lo, 2)
 				<< " " << HEX("", hi, 2) << "\t  " << i.name << " ";
-			ss << "[" << HEX("$", TO_WORD(lo, hi), 4) << "]";
+			ss << "(" << HEX("$", TO_WORD(lo, hi), 4) << ")";
 			break;
 
 		case ZPX:
@@ -450,32 +449,29 @@ std::map<WORD, std::string> Mos6502::Disassemble(WORD begin, WORD end)
 
 		case ZPY:
 			ss << HEX("", op, 2) << " " << HEX("", lo, 2) << "\t  " << i.name << " ";
-			ss << "(" << HEX("$", lo, 2) << " + Y)";
+			ss << "(" << HEX("$", lo, 2) << ", Y)";
 			break;
 
 		case ABX:
 			ss << HEX("", op, 2) << " " << HEX("", lo, 2)
 				<< " " << HEX("", hi, 2) << "\t  " << i.name << " ";
-			ss << "(" << HEX("$", TO_WORD(lo, hi), 4) << " + X)";
-			ptr += 3;
+			ss << HEX("$", TO_WORD(lo, hi), 4) << ", X";
 			break;
 
 		case ABY:
 			ss << HEX("", op, 2) << " " << HEX("", lo, 2)
 				<< " " << HEX("", hi, 2) << "\t  " << i.name << " ";
-			ss << "(" << HEX("$", TO_WORD(lo, hi), 4) << " + Y)";
+			ss << HEX("$", TO_WORD(lo, hi), 4) << ", Y";
 			break;
 
 		case IDX:
-			ss << HEX("", op, 2) << " " << HEX("", lo, 2)
-				<< " " << HEX("", hi, 2) << "\t  " << i.name << " ";
-			ss << "[" << HEX("$", TO_WORD(lo, hi), 4) << " + X]";
+			ss << HEX("", op, 2) << " " << HEX("", lo, 2) << "\t  " << i.name << " ";
+			ss << "(" << HEX("$", lo, 2) << ", X)";
 			break;
 
 		case IDY:
-			ss << HEX("", op, 2) << " " << HEX("", lo, 2)
-				<< " " << HEX("", hi, 2) << "\t  " << i.name << " ";
-			ss << "([" << HEX("$", TO_WORD(lo, hi), 4) << "] + Y)";
+			ss << HEX("", op, 2) << " " << HEX("", lo, 2) << "\t  " << i.name << " ";
+			ss << "(" << HEX("$", lo, 2) << "), Y";
 			break;
 
 		default:
@@ -965,7 +961,7 @@ bool Mos6502::Execute()
 		WORD result = (m_oStatus.Flag.Carry << 7);
 		result |= (m_uFetched >> 1);
 
-		m_oStatus.Flag.Carry = BIT_(8, result);
+		m_oStatus.Flag.Carry = BIT_(0, m_uFetched);
 		m_oStatus.Flag.Zero = (result == 0);
 		m_oStatus.Flag.Negative = BIT_(7, result);
 
@@ -1204,17 +1200,15 @@ BYTE Mos6502::Fetch()
 	case IDX:
 	{
 		BYTE offset = Read(m_uPC++);
-		m_uFetchedFrom = TO_WORD(Read(offset + m_uX), Read(offset + m_uX + 1));
+		m_uFetchedFrom = TO_WORD(Read((offset + m_uX) & 0xFF), Read((offset + m_uX + 1) & 0xFF));
 		SERVE(Read(m_uFetchedFrom));
 	};
 
 	case IDY:
 	{
 		BYTE offset = Read(m_uPC++);
-		BYTE lo = Read(offset);
-		BYTE hi = Read(offset + 1);
-
-		WORD m_uFetchedFrom = TO_WORD(lo, hi) + m_uY;
+		BYTE hi = Read((offset + 1) & 0xFF);
+		WORD m_uFetchedFrom = TO_WORD(Read(offset), hi) + m_uY;
 		m_bSwitchedPage = (((m_uFetchedFrom & 0xFF00) >> 8) != hi);
 
 		SERVE(Read(m_uFetchedFrom));

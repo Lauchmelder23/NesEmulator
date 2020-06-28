@@ -11,15 +11,13 @@ while True:
 	if orig_line == "" or dump_line == "":
 		break
 
-	orig_line = orig_line.translate(str.maketrans('', '', ' $\t'))
-	dump_line = dump_line.translate(str.maketrans('', '', ' $\t'))
+	orig_line = orig_line.split(":")[-1]
+	dump_line = dump_line.split(")")[0]
 
-	dump_line = dump_line.split(")")[1]
+	orig_line = orig_line[:-1]
+	dump_line = dump_line[1:5]
 
-	orig_line = orig_line[:4]
-	dump_line = dump_line[:4]
-
-	if orig_line != dump_line:
+	if int(orig_line) != int(dump_line):
 		print("Difference in line " + str(line) + ": " + orig_line + " --- " + dump_line)
 		break
 
