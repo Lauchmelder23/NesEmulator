@@ -1,6 +1,5 @@
 #include "NESWindow.hpp"
 #include <iostream>
-#include <fstream>
 
 bool NESWindow::OnCreate()
 {
@@ -23,7 +22,7 @@ bool NESWindow::OnCreate()
 	m_pFont = TTF_OpenFont("PressStart2P.ttf", 12);
 	if (m_pFont == nullptr)
 	{
-		std::cerr << "Failed to laod font" << std::endl;
+		std::cerr << "Failed to laod font\n" << std::endl;
 		return false;
 	}
 
@@ -42,6 +41,15 @@ bool NESWindow::OnCreate()
 
 	// Boot the NES
 	m_oNes.m_oCPU.Reset();
+
+	m_oOutput = std::ofstream("dump.log");
+	if (!m_oOutput.is_open())
+	{
+		std::cerr << "Could not open dump.log\n" << std::endl;
+		return false;
+	}
+
+	
 
 	return true;
 }
@@ -85,7 +93,9 @@ bool NESWindow::OnUpdate(double frametime)
 	}
 
 	PrintCurrentInstruction();
-	RenderMemoryMap();
+	// RenderMemoryMap(); // Slow af
+
+	return true;
 }
 
 void NESWindow::OnRender(SDL_Renderer* renderer)
@@ -110,6 +120,9 @@ void NESWindow::OnRender(SDL_Renderer* renderer)
 
 void NESWindow::OnClose()
 {
+	if (m_oOutput.is_open())
+		m_oOutput.close();
+
 	SDL_DestroyTexture(m_pTexture);
 
 	TTF_CloseFont(m_pFont);
@@ -131,11 +144,9 @@ void NESWindow::PrintCurrentInstruction()
 		<< "S=" << (WORD)m_oNes.m_oCPU.m_uSP << ", "
 		<< "F=" << m_oNes.m_oCPU.m_oStatus.AsString() << " (" << HEX("", m_oNes.m_oCPU.m_oStatus.Raw, 2) << ")" << std::endl;
 
-	std::cout << ss.str();
+	std::cout << ss.str() << std::endl;
 
-	std::ofstream file("dump.log", std::ios::app);
-	file.write(ss.str().c_str(), ss.str().length());
-	file.close();
+	m_oOutput.write(ss.str().c_str(), ss.str().length());
 }
 
 void NESWindow::RenderMemoryMap()

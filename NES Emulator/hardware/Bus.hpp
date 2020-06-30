@@ -6,9 +6,6 @@
 #include "RP2C02.hpp"
 #include "Cartridge.hpp"
 
-#define Push(x) Write(0x0100 + (m_uSP--), x)	// Pushes to stack
-#define Pop() Read(0x0100 + (++m_uSP))			// Pops from stack
-
 class Bus
 {
 public:

@@ -8,7 +8,8 @@
 Mos6502::Mos6502() :
 	m_pBus(nullptr),
 	m_uAcc(0x00), m_uX(0x00), m_uY(0x00), m_uSP(0x00), m_uPC(0x0000),
-	m_uFetched(0x00), m_uOpcode(0x00), m_uCycles(0x00), m_uCyclesTotal(0)
+	m_uFetched(0x00), m_uOpcode(0x00), m_uCycles(0x00), m_uCyclesTotal(0),
+	m_isHalted(false)
 {
 
 	m_vecLookup = 
@@ -16,182 +17,182 @@ Mos6502::Mos6502() :
 		// 0x00
 		MAKE(BRK, IMP, 7),
 		MAKE(ORA, IDX, 6),
-		MAKE(JAM, IMP, 0),
-		MAKE(UOP, IMP, 2),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("JAM", ILL_JAM, IMP, 0), 
+		MAKE_ILLEGAL("SLO*", ILL_SLO, IDX, 8),
+		MAKE_ILLEGAL("NOP*", ILL_NOP, ZPG, 3),
 		MAKE(ORA, ZPG, 3),
 		MAKE(ASL, ZPG, 5),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("SLO*", ILL_SLO, ZPG, 5),
 		MAKE(PHP, IMP, 3),
 		MAKE(ORA, IMM, 2),
 		MAKE(ASL, ACC, 2),
-		MAKE(UOP, IMP, 2),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("ANC**", ILL_ANC, IMM, 2),
+		MAKE_ILLEGAL("NOP*", ILL_NOP, ABS, 4),
 		MAKE(ORA, ABS, 4),
 		MAKE(ASL, ABS, 6),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("SLO*", ILL_SLO, ABS, 6),
 
 		// 0x10
 		MAKE(BPL, REL, 2),
 		MAKE(ORA, IDY, 5),
-		MAKE(JAM, IMP, 0),
-		MAKE(UOP, IMP, 2),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("JAM", ILL_JAM, IMP, 0),
+		MAKE_ILLEGAL("SLO*", ILL_SLO, IDY, 8),
+		MAKE_ILLEGAL("NOP*", ILL_NOP, ZPX, 4),
 		MAKE(ORA, ZPX, 4),
 		MAKE(ASL, ZPX, 6),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("SLO*", ILL_SLO, ZPX, 6),
 		MAKE(CLC, IMP, 2),
 		MAKE(ORA, ABY, 4),
-		MAKE(UOP, IMP, 2),
-		MAKE(UOP, IMP, 2),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("NOP*", ILL_NOP, IMP, 2),
+		MAKE_ILLEGAL("SLO*", ILL_SLO, ABY, 7),
+		MAKE_ILLEGAL("NOP*", ILL_NOP, ABX, 4),
 		MAKE(ORA, ABX, 4),
 		MAKE(ASL, ABX, 7),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("SLO*", ILL_SLO, ABX, 8),
 
 		// 0x20
 		MAKE(JSR, ABS, 6),
 		MAKE(AND, IDX, 6),
-		MAKE(JAM, IMP, 0),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("JAM", ILL_JAM, IMP, 0),
+		MAKE_ILLEGAL("RLA*", ILL_RLA, IDX, 8),
 		MAKE(BIT, ZPG, 3),
 		MAKE(AND, ZPG, 3),
 		MAKE(ROL, ZPG, 5),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("RLA*", ILL_RLA, ZPG, 5),
 		MAKE(PLP, IMP, 4),
 		MAKE(AND, IMM, 2),
 		MAKE(ROL, ACC, 2),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("ANC**", ILL_ANC, IMM, 2),
 		MAKE(BIT, ABS, 4),
 		MAKE(AND, ABS, 4),
 		MAKE(ROL, ABS, 6),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("RAL*", ILL_RLA, ABS, 6),
 
 		// 0x30
 		MAKE(BMI, REL, 2),
 		MAKE(AND, IDY, 5),
-		MAKE(JAM, IMP, 0),
-		MAKE(UOP, IMP, 2),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("JAM", ILL_JAM, IMP, 0),
+		MAKE_ILLEGAL("RLA*", ILL_RLA, IDY, 8),
+		MAKE_ILLEGAL("NOP*", ILL_NOP, ZPX, 4),
 		MAKE(AND, ZPX, 4),
 		MAKE(ROL, ZPX, 6),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("RLA*", ILL_RLA, ZPX, 6),
 		MAKE(SEC, IMP, 2),
 		MAKE(AND, ABY, 4),
-		MAKE(UOP, IMP, 2),
-		MAKE(UOP, IMP, 2),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("NOP*", ILL_NOP, IMP, 2),
+		MAKE_ILLEGAL("RLA*", ILL_RLA, ABY, 7),
+		MAKE_ILLEGAL("NOP*", ILL_NOP, ABX, 4),
 		MAKE(AND, ABX, 4),
 		MAKE(ROL, ABX, 7),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("RLA*", ILL_RLA, ABX, 7),
 
 		// 0x40
 		MAKE(RTI, IMP, 6),
 		MAKE(EOR, IDX, 6),
-		MAKE(JAM, IMP, 0),
-		MAKE(UOP, IMP, 2),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("JAM", ILL_JAM, IMP, 0),
+		MAKE_ILLEGAL("SRE*", ILL_SRE, IDX, 8),
+		MAKE_ILLEGAL("NOP*", ILL_NOP, ZPG, 3),
 		MAKE(EOR, ZPG, 3),
 		MAKE(LSR, ZPG, 5),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("SRE*", ILL_SRE, ZPG, 5),
 		MAKE(PHA, IMP, 3),
 		MAKE(EOR, IMM, 2),
 		MAKE(LSR, ACC, 2),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("ALR**", ILL_ALR, IMM, 2),
 		MAKE(JMP, ABS, 3),
 		MAKE(EOR, ABS, 4),
 		MAKE(LSR, ABS, 6),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("SRE*", ILL_SRE, ABS, 6),
 
 		// 0x50
 		MAKE(BVC, REL, 2),
 		MAKE(EOR, IDY, 5),
-		MAKE(JAM, IMP, 0),
-		MAKE(UOP, IMP, 2),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("JAM", ILL_JAM, IMP, 0),
+		MAKE_ILLEGAL("SRE*", ILL_SRE, IDY, 8),
+		MAKE_ILLEGAL("NOP*", ILL_NOP, ZPX, 4),
 		MAKE(EOR, ZPX, 4),
 		MAKE(LSR, ZPX, 6),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("SRE*", ILL_SRE, ZPX, 6),
 		MAKE(CLI, IMP, 2),
 		MAKE(EOR, ABY, 4),
-		MAKE(UOP, IMP, 2),
-		MAKE(UOP, IMP, 2),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("NOP*", ILL_NOP, IMP, 2),
+		MAKE_ILLEGAL("SRE*", ILL_SRE, ABY, 7),
+		MAKE_ILLEGAL("NOP*", ILL_NOP, ABX, 4),
 		MAKE(EOR, ABX, 4),
 		MAKE(LSR, ABX, 7),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("SRE*", ILL_SRE, ABX, 7),
 
 		// 0x60
 		MAKE(RTS, IMP, 6),
 		MAKE(ADC, IDX, 6),
-		MAKE(JAM, IMP, 0),
-		MAKE(UOP, IMP, 2),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("JAM", ILL_JAM, IMP, 0),
+		MAKE_ILLEGAL("RRA*", ILL_RRA, IDX, 8),
+		MAKE_ILLEGAL("NOP*", ILL_NOP, ZPG, 3),
 		MAKE(ADC, ZPG, 3),
 		MAKE(ROR, ZPG, 5),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("RRA*", ILL_RRA, ZPG, 5),
 		MAKE(PLA, IMP, 4),
 		MAKE(ADC, IMM, 2),
 		MAKE(ROR, ACC, 2),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("ARR**", ILL_ARR, IMM, 2),
 		MAKE(JMP, IND, 5),
 		MAKE(ADC, ABS, 4),
 		MAKE(ROR, ABS, 6),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("RRA*", ILL_RRA, ABS, 6),
 
 		// 0x70
 		MAKE(BVS, REL, 2),
 		MAKE(ADC, IDY, 5),
-		MAKE(JAM, IMP, 0),
-		MAKE(UOP, IMP, 2),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("JAM", ILL_JAM, IMP, 0),
+		MAKE_ILLEGAL("RRA*", ILL_RRA, IDY, 8),
+		MAKE_ILLEGAL("NOP*", ILL_NOP, ZPX, 4),
 		MAKE(ADC, ZPX, 4),
 		MAKE(ROR, ZPX, 6),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("RRA*", ILL_RRA, ZPX, 6),
 		MAKE(SEI, IMP, 2),
 		MAKE(ADC, ABY, 4),
-		MAKE(UOP, IMP, 2),
-		MAKE(UOP, IMP, 2),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("NOP*", ILL_NOP, IMP, 2),
+		MAKE_ILLEGAL("RRA*", ILL_RRA, ABY, 7),
+		MAKE_ILLEGAL("NOP*", ILL_NOP, ABX, 4),
 		MAKE(ADC, ABX, 4),
 		MAKE(ROR, ABX, 7),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("RRA*", ILL_RRA, ABX, 7),
 
 		// 0x80
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("NOP*", ILL_NOP, IMM, 2),
 		MAKE(STA, IDX, 6),
-		MAKE(UOP, IMP, 2),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("NOP*t", ILL_NOP, IMM, 2),
+		MAKE_ILLEGAL("SAX*", ILL_SAX, IDX, 6),
 		MAKE(STY, ZPG, 3),
 		MAKE(STA, ZPG, 3),
 		MAKE(STX, ZPG, 3),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("SAX*", ILL_SAX, ZPG, 3),
 		MAKE(DEY, IMP, 2),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("NOP*", ILL_NOP, IMM, 2),
 		MAKE(TXA, IMP, 2),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("XAA**", ILL_XAA, IMM, 2),
 		MAKE(STY, ABS, 4),
 		MAKE(STA, ABS, 4),
 		MAKE(STX, ABS, 4),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("SAX*", ILL_SAX, ABS, 4),
 
 		// 0x90
 		MAKE(BCC, REL, 2),
 		MAKE(STA, IDY, 6),
-		MAKE(JAM, IMP, 0),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("JAM", ILL_JAM, IMP, 0),
+		MAKE_ILLEGAL("AHX*", ILL_AHX, IDY, 6),
 		MAKE(STY, ZPX, 4),
 		MAKE(STA, ZPX, 4),
 		MAKE(STX, ZPY, 4),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("SAX*", ILL_SAX, ZPY, 4),
 		MAKE(TYA, IMP, 2),
 		MAKE(STA, ABY, 5),
 		MAKE(TXS, IMP, 2),
-		MAKE(UOP, IMP, 2),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("TAS*", ILL_TAS, ABY, 5),
+		MAKE_ILLEGAL("SHY*", ILL_SHY, ABX, 5),
 		MAKE(STA, ABX, 5),
-		MAKE(UOP, IMP, 2),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("SHX*", ILL_SHX, ABY, 5),
+		MAKE_ILLEGAL("AHX*", ILL_AHX, ABY, 5),
 
 		// 0xA0
 		MAKE(LDY, IMM, 2),
@@ -214,7 +215,7 @@ Mos6502::Mos6502() :
 		// 0xB0
 		MAKE(BCS, REL, 2),
 		MAKE(LDA, IDY, 5),
-		MAKE(JAM, IMP, 0),
+		MAKE_ILLEGAL("JAM", ILL_JAM, IMP, 0),
 		MAKE(UOP, IMP, 2),
 		MAKE(LDY, ZPX, 4),
 		MAKE(LDA, ZPX, 4),
@@ -250,7 +251,7 @@ Mos6502::Mos6502() :
 		// 0xD0
 		MAKE(BNE, REL, 2),
 		MAKE(CMP, IDY, 5),
-		MAKE(JAM, IMP, 0),
+		MAKE_ILLEGAL("JAM", ILL_JAM, IMP, 0),
 		MAKE(UOP, IMP, 2),
 		MAKE(UOP, IMP, 2),
 		MAKE(CMP, ZPX, 4),
@@ -286,7 +287,7 @@ Mos6502::Mos6502() :
 		// 0xF0
 		MAKE(BEQ, REL, 2),
 		MAKE(SBC, IDY, 5),
-		MAKE(JAM, IMP, 0),
+		MAKE_ILLEGAL("JAM", ILL_JAM, IMP, 0),
 		MAKE(UOP, IMP, 2),
 		MAKE(UOP, IMP, 2),
 		MAKE(SBC, ZPX, 4),
@@ -313,24 +314,28 @@ Mos6502::~Mos6502()
 
 void Mos6502::Tick()
 {
-	if (m_uCyclesTotal == 10428)
-		__debugbreak();
-
-	if (m_uCycles == 0)
+	if (!m_isHalted)
 	{
-		m_uOpcode = Read(m_uPC);	// Read Opcode from memory
-		m_uPC++;
+		//if (m_uCyclesTotal == 10428)
+		//	__debugbreak();
 
-		m_uCycles = m_vecLookup[m_uOpcode].cycles;
+		if (m_uCycles == 0)
+		{
 
-		Fetch();	// Get Addressing mode, write the value for the operation to m_uFetched
-		bool m_bSwitch = Execute();
-		if (m_bSwitchedPage && m_bSwitch)
-			m_uCycles++;
+			m_uOpcode = Read(m_uPC);	// Read Opcode from memory
+			m_uPC++;
+
+			m_uCycles = m_vecLookup[m_uOpcode].cycles;
+
+			Fetch();	// Get Addressing mode, write the value for the operation to m_uFetched
+			bool m_bSwitch = Execute();
+			if (m_bSwitchedPage && m_bSwitch)
+				m_uCycles++;
+		}
+
+		m_uCycles--;
+		m_uCyclesTotal++;
 	}
-
-	m_uCycles--;
-	m_uCyclesTotal++;
 }
 
 void Mos6502::Reset()
@@ -339,13 +344,17 @@ void Mos6502::Reset()
 	m_uX = 0x00;
 	m_uY = 0x00;
 	m_uSP = 0xFD;
-	m_oStatus.Raw = 0x24;
+	m_oStatus.Raw = 0x34;
 	m_uCycles = 7;
 	m_uCyclesTotal = 0;
 
 	m_uPC = 0xC000; //TO_WORD(Read(0xFFFC), Read(0xFFFD));	// 0xFFFC is the reset vector
 
 	m_uFetched = 0x00;
+
+#ifdef BENCHMARKING
+	begin = std::chrono::steady_clock::now();
+#endif
 }
 
 void Mos6502::IRQ()
@@ -353,14 +362,14 @@ void Mos6502::IRQ()
 	if (!m_oStatus.Flag.Interrupt)
 	{
 		// Push current PC to stack
-		Push((m_uPC & 0xFF00) >> 8);
-		Push(m_uPC & 0x00FF);
+		PushTo((m_uPC & 0xFF00) >> 8);
+		PushTo(m_uPC & 0x00FF);
 
 		// Push status to stack
 		m_oStatus.Flag.Break = false;
 		m_oStatus.Flag.Unused = true;
 		m_oStatus.Flag.Interrupt = true;
-		Push(m_oStatus.Raw);	// TODO: Untested, might break
+		PushTo(m_oStatus.Raw);	// TODO: Untested, might break
 
 		// Get new PC from Interrupt vector 0xFFFE
 		m_uPC = TO_WORD(Read(0xFFFE), Read(0xFFFF));
@@ -372,14 +381,14 @@ void Mos6502::IRQ()
 void Mos6502::NMI()
 {
 	// Push current PC to stack
-	Push((m_uPC & 0xFF00) >> 8);
-	Push(m_uPC & 0x00FF);
+	PushTo((m_uPC & 0xFF00) >> 8);
+	PushTo(m_uPC & 0x00FF);
 
 	// Push status to stack
 	m_oStatus.Flag.Break = false;
 	m_oStatus.Flag.Unused = true;
 	m_oStatus.Flag.Interrupt = true;
-	Push(m_oStatus.Raw);	// TODO: Untested, might break
+	PushTo(m_oStatus.Raw);	// TODO: Untested, might break
 
 	// Get new PC from Interrupt vector 0xFFFE
 	m_uPC = TO_WORD(Read(0xFFFA), Read(0xFFFB));
@@ -392,7 +401,7 @@ std::map<WORD, std::string> Mos6502::Disassemble(WORD begin, WORD end)
 	// Disassembles the RAM from $begin to $end
 	std::map<WORD, std::string> disassemble;
 
-	for (DWORD ptr = begin; ptr <= end; ptr++)
+	for (uint32_t ptr = begin; ptr <= end; ptr++)
 	{
 		Instruction i = m_vecLookup[Read(ptr)];
 		std::stringstream ss;
@@ -662,11 +671,11 @@ bool Mos6502::Execute()
 		m_uPC++;
 		m_oStatus.Flag.Interrupt = true;
 
-		Push((m_uPC & 0xFF00) >> 8);
-		Push(m_uPC & 0x00FF);
+		PushTo((m_uPC & 0xFF00) >> 8);
+		PushTo(m_uPC & 0x00FF);
 
 		m_oStatus.Flag.Break = true;
-		Push(m_oStatus.Raw);
+		PushTo(m_oStatus.Raw);
 		m_oStatus.Flag.Break = false;
 
 		m_uPC = TO_WORD(Read(0xFFFE), Read(0xFFFF));
@@ -831,11 +840,6 @@ bool Mos6502::Execute()
 		return false;
 	}
 
-	case JAM:	// Literally halts the CPU and ends the universe
-	{
-		throw "CPU has been halted.";
-	}
-
 	case JMP:	// Jump to address
 	{
 		m_uPC = m_uFetchedFrom;
@@ -847,8 +851,8 @@ bool Mos6502::Execute()
 	{
 		m_uPC--;
 
-		Push((m_uPC & 0xFF00) >> 8);
-		Push(m_uPC & 0x00FF);
+		PushTo((m_uPC & 0xFF00) >> 8);
+		PushTo(m_uPC & 0x00FF);
 
 		m_uPC = m_uFetchedFrom;
 
@@ -918,19 +922,19 @@ bool Mos6502::Execute()
 
 	case PHA:	// Push accumulator
 	{
-		Push(m_uAcc);
+		PushTo(m_uAcc);
 		return false;
 	}
 
 	case PHP:	// Push status
 	{
-		Push(m_oStatus.Raw);
+		PushTo(m_oStatus.Raw);
 		return false;
 	}
 
 	case PLA:	// Pull accumulator
 	{
-		m_uAcc = Pop();
+		m_uAcc = PopFrom();
 
 		m_oStatus.Flag.Zero = (m_uAcc == 0x00);
 		m_oStatus.Flag.Negative = BIT_(7, m_uAcc);
@@ -940,7 +944,7 @@ bool Mos6502::Execute()
 
 	case PLP:	// Pull status
 	{
-		m_oStatus.Raw = Pop();
+		m_oStatus.Raw = PopFrom();
 		return false;
 	}
 
@@ -981,12 +985,12 @@ bool Mos6502::Execute()
 	case RTI:	// Return from interrupt
 	{
 		// Retrieve Status from stack
-		m_oStatus.Raw = Pop();
+		m_oStatus.Raw = PopFrom();
 		m_oStatus.Flag.Break = 0;
 
 		// Retrieve PC from stack
-		BYTE lo = Pop();
-		BYTE hi = Pop();
+		BYTE lo = PopFrom();
+		BYTE hi = PopFrom();
 		m_uPC = TO_WORD(lo, hi);
 
 		return false;
@@ -994,8 +998,8 @@ bool Mos6502::Execute()
 
 	case RTS:	// Return from subroutine
 	{
-		BYTE lo = Pop();
-		BYTE hi = Pop();
+		BYTE lo = PopFrom();
+		BYTE hi = PopFrom();
 		m_uPC = TO_WORD(lo, hi);
 		m_uPC++;
 
@@ -1124,6 +1128,32 @@ bool Mos6502::Execute()
 		return false;
 	}
 
+
+
+	case ILL_JAM:	// Literally halts the CPU and ends the universe
+	{
+		m_isHalted = true;
+		return 0x00;
+	}
+
+	case ILL_SLO:	// ASL + ORA
+	{
+		WORD result = (WORD)m_uFetched << 1;
+		Write(m_uFetchedFrom, result & 0x00FF);
+		m_uAcc = m_uAcc | result;
+
+		m_oStatus.Flag.Carry = BIT_(8, result);
+		m_oStatus.Flag.Zero = (m_uAcc == 0);
+		m_oStatus.Flag.Negative = BIT_(7, m_uAcc);
+
+		if (m_vecLookup[m_uOpcode].addressMode == ACC)
+			m_uAcc = (result & 0x00FF);
+		else
+			
+
+		return false;
+	}
+
 	default:
 		throw std::string("Unknown Opcode encountered (") + m_vecLookup[m_uOpcode].name + std::string(")");
 		break;
@@ -1164,7 +1194,7 @@ BYTE Mos6502::Fetch()
 	{
 		BYTE lo = Read(m_uPC++);
 		BYTE hi = Read(m_uPC++);
-		m_uFetchedFrom = TO_WORD(Read(TO_WORD(lo, hi)), Read(TO_WORD((lo + 0x01) & 0xFF, hi)), );
+		m_uFetchedFrom = TO_WORD(Read(TO_WORD(lo, hi)), Read(TO_WORD((lo + 0x01) & 0xFF, hi)));
 		SERVE(Read(m_uFetchedFrom));
 	};
 

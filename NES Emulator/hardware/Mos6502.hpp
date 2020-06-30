@@ -68,7 +68,25 @@
 
 // TODO: Implement
 #pragma region Illegal Opcodes
-#define JAM 0x38
+#define ILL_JAM 0x38
+#define ILL_NOP 0x39
+#define ILL_SLO 0x40
+#define ILL_ANC 0x41
+#define ILL_RLA 0x42
+#define ILL_SRE 0x43
+#define ILL_ALR 0x44
+#define ILL_RRA 0x45
+#define ILL_ARR 0x46
+#define ILL_SAX 0x47
+#define ILL_XAA 0x48
+#define ILL_AHX 0x49
+#define ILL_TAS 0x50
+#define ILL_SHY 0x51
+#define ILL_SHX 0x52
+#define ILL_LAX 0x53
+#define ILL_DCP 0x54
+#define ILL_ISC 0x55
+#define ILL_SBC 0x56
 #pragma endregion
 
 ///////////////// Internal values for addressing modes /////////////////
@@ -173,6 +191,8 @@ private:
 	bool m_bSwitchedPage;
 	BYTE m_uOpcode, m_uCycles;
 	uint64_t m_uCyclesTotal;
+
+	bool m_isHalted;
 
 	std::vector<Instruction> m_vecLookup;
 };

@@ -48,7 +48,7 @@ Cartridge::~Cartridge()
 
 bool Cartridge::ReadCPU(WORD address, BYTE& value)
 {
-	DWORD mappedAddress = 0;
+	WORD mappedAddress = 0;
 	if (m_pUsedMapper->MappedReadCPU(address, mappedAddress))
 	{
 		value = m_pPRGMemory[mappedAddress];
@@ -60,7 +60,7 @@ bool Cartridge::ReadCPU(WORD address, BYTE& value)
 
 bool Cartridge::WriteCPU(WORD address, BYTE value)
 {
-	DWORD mappedAddress = 0;
+	WORD mappedAddress = 0;
 	if (m_pUsedMapper->MappedWriteCPU(address, mappedAddress))
 	{
 		m_pPRGMemory[mappedAddress] = value;
@@ -72,7 +72,7 @@ bool Cartridge::WriteCPU(WORD address, BYTE value)
 
 bool Cartridge::ReadPPU(WORD address, BYTE& value)
 {
-	DWORD mappedAddress = 0;
+	WORD mappedAddress = 0;
 	if (m_pUsedMapper->MappedReadPPU(address, mappedAddress))
 	{
 		value = m_pCHRMemory[mappedAddress];
@@ -84,7 +84,7 @@ bool Cartridge::ReadPPU(WORD address, BYTE& value)
 
 bool Cartridge::WritePPU(WORD address, BYTE value)
 {
-	DWORD mappedAddress = 0;
+	WORD mappedAddress = 0;
 	if (m_pUsedMapper->MappedWritePPU(address, mappedAddress))
 	{
 		m_pCHRMemory[mappedAddress] = value;

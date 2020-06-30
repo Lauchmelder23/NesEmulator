@@ -11,10 +11,10 @@ public:
 	~Mapper() = default;
 
 public:
-	virtual bool MappedReadCPU(WORD address, DWORD& mappedAddress) = 0;
-	virtual bool MappedWriteCPU(WORD address, DWORD& mappedAddress) = 0;
-	virtual bool MappedReadPPU(WORD address, DWORD& mappedAddress) = 0;
-	virtual bool MappedWritePPU(WORD address, DWORD& mappedAddress) = 0;
+	virtual bool MappedReadCPU(WORD address, WORD& mappedAddress) = 0;
+	virtual bool MappedWriteCPU(WORD address, WORD& mappedAddress) = 0;
+	virtual bool MappedReadPPU(WORD address, WORD& mappedAddress) = 0;
+	virtual bool MappedWritePPU(WORD address, WORD& mappedAddress) = 0;
 
 protected:
 	BYTE m_uPrgBanks, m_uChrBanks;

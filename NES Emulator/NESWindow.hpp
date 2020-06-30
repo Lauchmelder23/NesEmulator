@@ -4,6 +4,7 @@
 #include <SDLF.hpp>
 #include <SDL_ttf.h>
 #include <sstream>
+#include <fstream>
 
 #include "Bus.hpp"
 
@@ -20,7 +21,7 @@ public:
 		IWindow(sf::Vec2u(SCREEN_WIDTH, SCREEN_HEIGHT)* SCALE, sf::Vec2i(100, 100), "NESemu",
 			SDL_WINDOW_SHOWN, SDL_RENDERER_TARGETTEXTURE),
 		m_pTexture(nullptr), m_pMemoryMap(nullptr), m_pFont(nullptr), m_pMemoryMapSurface(nullptr),
-		m_pScreen(nullptr)
+		m_pScreen(nullptr), m_pCartridge(nullptr), m_pOutRect(nullptr)
 	{
 
 	}
@@ -50,4 +51,5 @@ private:
 	int fontHeight = 0;
 
 	std::map<WORD, std::string> m_mapDisassemble;
+	std::ofstream m_oOutput;
 };

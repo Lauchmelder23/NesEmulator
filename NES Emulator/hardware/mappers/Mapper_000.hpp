@@ -9,7 +9,7 @@ public:
 	~Mapper_000() = default;
 
 public:
-	bool MappedReadCPU(WORD address, DWORD& mappedAddress) override
+	bool MappedReadCPU(WORD address, WORD& mappedAddress) override
 	{
 		// Only interested in 0x8000 - 0xFFFF
 		if (IS_IN_RANGE(address, 0x8000, 0xFFFF))
@@ -21,7 +21,7 @@ public:
 		return false;
 	}
 
-	bool MappedWriteCPU(WORD address, DWORD& mappedAddress) override
+	bool MappedWriteCPU(WORD address, WORD& mappedAddress) override
 	{
 		// Only interested in 0x8000 - 0xFFFF
 		if (IS_IN_RANGE(address, 0x8000, 0xFFFF))
@@ -33,7 +33,7 @@ public:
 		return false;
 	}
 
-	bool MappedReadPPU(WORD address, DWORD& mappedAddress) override
+	bool MappedReadPPU(WORD address, WORD& mappedAddress) override
 	{
 		// Only interested in 0x0000 - 0x1FFF
 		if (IS_IN_RANGE(address, 0x0000, 0x1FFF))
@@ -45,7 +45,7 @@ public:
 		return false;
 	}
 
-	bool MappedWritePPU(WORD address, DWORD& mappedAddress) override
+	bool MappedWritePPU(WORD address, WORD& mappedAddress) override
 	{
 		// Nothing
 		return false;
