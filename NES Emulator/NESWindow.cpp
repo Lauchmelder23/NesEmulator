@@ -144,7 +144,7 @@ void NESWindow::PrintCurrentInstruction()
 		<< "S=" << (WORD)m_oNes.m_oCPU.m_uSP << ", "
 		<< "F=" << m_oNes.m_oCPU.m_oStatus.AsString() << " (" << HEX("", m_oNes.m_oCPU.m_oStatus.Raw, 2) << ")" << std::endl;
 
-	std::cout << ss.str() << std::endl;
+	std::cout << ss.str();
 
 	m_oOutput.write(ss.str().c_str(), ss.str().length());
 }

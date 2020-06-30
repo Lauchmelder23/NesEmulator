@@ -87,6 +87,8 @@
 #define ILL_DCP 0x54
 #define ILL_ISC 0x55
 #define ILL_SBC 0x56
+#define ILL_LAS 0x57
+#define ILL_AXS 0x58
 #pragma endregion
 
 ///////////////// Internal values for addressing modes /////////////////

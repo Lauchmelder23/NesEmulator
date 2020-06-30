@@ -180,7 +180,7 @@ Mos6502::Mos6502() :
 		MAKE(BCC, REL, 2),
 		MAKE(STA, IDY, 6),
 		MAKE_ILLEGAL("JAM", ILL_JAM, IMP, 0),
-		MAKE_ILLEGAL("AHX*", ILL_AHX, IDY, 6),
+		MAKE_ILLEGAL("AHX**", ILL_AHX, IDY, 6),
 		MAKE(STY, ZPX, 4),
 		MAKE(STA, ZPX, 4),
 		MAKE(STX, ZPY, 4),
@@ -188,119 +188,119 @@ Mos6502::Mos6502() :
 		MAKE(TYA, IMP, 2),
 		MAKE(STA, ABY, 5),
 		MAKE(TXS, IMP, 2),
-		MAKE_ILLEGAL("TAS*", ILL_TAS, ABY, 5),
-		MAKE_ILLEGAL("SHY*", ILL_SHY, ABX, 5),
+		MAKE_ILLEGAL("TAS**", ILL_TAS, ABY, 5),
+		MAKE_ILLEGAL("SHY**", ILL_SHY, ABX, 5),
 		MAKE(STA, ABX, 5),
-		MAKE_ILLEGAL("SHX*", ILL_SHX, ABY, 5),
-		MAKE_ILLEGAL("AHX*", ILL_AHX, ABY, 5),
+		MAKE_ILLEGAL("SHX**", ILL_SHX, ABY, 5),
+		MAKE_ILLEGAL("AHX**", ILL_AHX, ABY, 5),
 
 		// 0xA0
 		MAKE(LDY, IMM, 2),
 		MAKE(LDA, IDX, 6),
 		MAKE(LDX, IMM, 2),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("LAX*", ILL_LAX, IDX, 6),
 		MAKE(LDY, ZPG, 3),
 		MAKE(LDA, ZPG, 3),
 		MAKE(LDX, ZPG, 3),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("LAX", ILL_LAX, ZPG, 3),
 		MAKE(TAY, IMP, 2),
 		MAKE(LDA, IMM, 2),
 		MAKE(TAX, IMP, 2),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("LAX**", ILL_LAX, IMM, 2),
 		MAKE(LDY, ABS, 4),
 		MAKE(LDA, ABS, 4),
 		MAKE(LDX, ABS, 4),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("LAX*", ILL_LAX, ABS, 4),
 
 		// 0xB0
 		MAKE(BCS, REL, 2),
 		MAKE(LDA, IDY, 5),
 		MAKE_ILLEGAL("JAM", ILL_JAM, IMP, 0),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("LAX*", ILL_LAX, IDY, 5),
 		MAKE(LDY, ZPX, 4),
 		MAKE(LDA, ZPX, 4),
 		MAKE(LDX, ZPY, 4),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("LAX*", ILL_LAX, ZPY, 4),
 		MAKE(CLV, IMP, 2),
 		MAKE(LDA, ABY, 4),
 		MAKE(TSX, IMP, 2),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("LAS**", ILL_LAS, ABY, 4),
 		MAKE(LDY, ABX, 4),
 		MAKE(LDA, ABX, 4),
 		MAKE(LDX, ABY, 4),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("LAX*", ILL_LAX, ABY, 4),
 
 		// 0xC0
 		MAKE(CPY, IMM, 2),
 		MAKE(CMP, IDX, 6),
-		MAKE(UOP, IMP, 2),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("NOP*t", ILL_NOP, IMM, 2),
+		MAKE_ILLEGAL("DCP*", ILL_DCP, IDX, 8),
 		MAKE(CPY, ZPG, 3),
 		MAKE(CMP, ZPG, 3),
 		MAKE(DEC, ZPG, 5),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("DCP*", ILL_DCP, ZPG, 5),
 		MAKE(INY, IMP, 2),
 		MAKE(CMP, IMM, 2),
 		MAKE(DEX, IMP, 2),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("AXS**", ILL_AXS, IMM, 2),
 		MAKE(CPY, ABS, 4),
 		MAKE(CMP, ABS, 4),
 		MAKE(DEC, ABS, 6),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("DCP*", ILL_DCP, ABS, 6),
 
 		// 0xD0
 		MAKE(BNE, REL, 2),
 		MAKE(CMP, IDY, 5),
 		MAKE_ILLEGAL("JAM", ILL_JAM, IMP, 0),
-		MAKE(UOP, IMP, 2),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("DCP*", ILL_DCP, IDY, 8),
+		MAKE_ILLEGAL("NOP*", ILL_NOP, ZPX, 4),
 		MAKE(CMP, ZPX, 4),
 		MAKE(DEC, ZPX, 6),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("DCP*", ILL_DCP, ZPX, 6),
 		MAKE(CLD, IMP, 2),
 		MAKE(CMP, ABY, 4),
-		MAKE(UOP, IMP, 2),
-		MAKE(UOP, IMP, 2),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("NOP*", ILL_NOP, IMP, 2),
+		MAKE_ILLEGAL("DCP*", ILL_DCP, ABY, 7),
+		MAKE_ILLEGAL("NOP*", ILL_NOP, ABX, 4),
 		MAKE(CMP, ABX, 4),
 		MAKE(DEC, ABX, 7),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("DCP*", ILL_DCP, ABX, 7),
 
 		// 0xE0
 		MAKE(CPX, IMM, 2),
 		MAKE(SBC, IDX, 6),
-		MAKE(UOP, IMP, 2),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("NOP*t", ILL_NOP, IMM, 2),
+		MAKE_ILLEGAL("ISC*", ILL_ISC, IDX, 8),
 		MAKE(CPX, ZPG, 3),
 		MAKE(SBC, ZPG, 3),
 		MAKE(INC, ZPG, 5),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("ISC*", ILL_ISC, ZPG, 5),
 		MAKE(INX, IMP, 2),
 		MAKE(SBC, IMM, 2),
 		MAKE(NOP, IMP, 2),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("SBC*", ILL_SBC, IMM, 2),
 		MAKE(CPX, ABS, 4),
 		MAKE(SBC, ABS, 4),
 		MAKE(INC, ABS, 6),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("ISC*", ILL_ISC, ABS, 6),
 
 		// 0xF0
 		MAKE(BEQ, REL, 2),
 		MAKE(SBC, IDY, 5),
 		MAKE_ILLEGAL("JAM", ILL_JAM, IMP, 0),
-		MAKE(UOP, IMP, 2),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("ISC*", ILL_ISC, IDY, 8),
+		MAKE_ILLEGAL("NOP*", ILL_NOP, ZPX, 4),
 		MAKE(SBC, ZPX, 4),
 		MAKE(INC, ZPX, 6),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("ISC*", ILL_ISC, ZPX, 6),
 		MAKE(SED, IMP, 2),
 		MAKE(SBC, ABY, 4),
-		MAKE(UOP, IMP, 2),
-		MAKE(UOP, IMP, 2),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("NOP*", ILL_NOP, IMP, 2),
+		MAKE_ILLEGAL("ISC*", ILL_ISC, ABY, 7),
+		MAKE_ILLEGAL("NOP*", ILL_NOP, ABY, 4),
 		MAKE(SBC, ABX, 4),
 		MAKE(INC, ABX, 7),
-		MAKE(UOP, IMP, 2),
+		MAKE_ILLEGAL("ISC*", ILL_ISC, ABX, 7),
 		};
 
 	// Reset();
@@ -1129,11 +1129,73 @@ bool Mos6502::Execute()
 	}
 
 
+	case ILL_ALR:	// AND + LSR
+	{
+		m_uAcc = m_uAcc & m_uFetched;
+		WORD result = m_uAcc >> 1;
+
+		m_oStatus.Flag.Carry = BIT_(0, result);
+		m_oStatus.Flag.Zero = (result == 0x00);
+		m_oStatus.Flag.Negative = BIT_(7, result);
+
+		m_uAcc = result & 0x00FF;
+
+		return false;
+	}
+
+	case ILL_ANC:	// A = A & IMM
+	{
+		m_uAcc = m_uAcc & m_uFetched;
+
+		m_oStatus.Flag.Carry = BIT_(7, m_uAcc);
+		m_oStatus.Flag.Negative = BIT_(7, m_uAcc);
+		m_oStatus.Flag.Zero = (m_uAcc == 0x00);
+
+		return false;
+	}
 
 	case ILL_JAM:	// Literally halts the CPU and ends the universe
 	{
 		m_isHalted = true;
-		return 0x00;
+		return false;
+	}
+
+	case ILL_NOP:	// Illegal NOP
+	{
+		return true;
+	}
+
+	case ILL_RLA:	// ROL + AND
+	{
+		WORD result = (m_uFetched << 1);
+		result |= m_oStatus.Flag.Carry;	// Set bit 0 to carry
+		Write(m_uFetchedFrom, result);
+
+		m_uAcc = m_uAcc & result;
+
+		m_oStatus.Flag.Carry = BIT_(8, result);
+		m_oStatus.Flag.Zero = (m_uAcc == 0);
+		m_oStatus.Flag.Negative = BIT_(7, m_uAcc);
+
+		return false;
+	}
+
+	case ILL_RRA:
+	{
+		WORD result = (m_oStatus.Flag.Carry << 7);
+		result |= (m_uFetched >> 1);
+		m_oStatus.Flag.Carry = BIT_(0, m_uFetched);
+		Write(m_uFetchedFrom, result);
+
+		result = m_uAcc + result + m_oStatus.Flag.Carry;
+
+		m_oStatus.Flag.Carry = BIT_(8, result);
+		m_oStatus.Flag.Zero = (result == 0);
+		m_oStatus.Flag.Negative = BIT_(7, result);
+
+		m_uAcc = result & 0x00FF;
+
+		return false;
 	}
 
 	case ILL_SLO:	// ASL + ORA
@@ -1146,10 +1208,21 @@ bool Mos6502::Execute()
 		m_oStatus.Flag.Zero = (m_uAcc == 0);
 		m_oStatus.Flag.Negative = BIT_(7, m_uAcc);
 
-		if (m_vecLookup[m_uOpcode].addressMode == ACC)
-			m_uAcc = (result & 0x00FF);
-		else
-			
+		m_uAcc = (result & 0x00FF);
+
+		return false;
+	}
+
+	case ILL_SRE:
+	{
+		WORD result = (WORD)m_uFetched >> 1;
+		Write(m_uFetchedFrom, result);
+
+		m_uAcc = m_uAcc ^ result;
+
+		m_oStatus.Flag.Carry = BIT_(0, m_uFetched);
+		m_oStatus.Flag.Zero = (m_uAcc == 0x00);
+		m_oStatus.Flag.Negative = BIT_(7, m_uAcc);
 
 		return false;
 	}
