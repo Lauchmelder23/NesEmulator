@@ -31,3 +31,14 @@ endif(WIN32)
 add_custom_command (TARGET nesemu POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy "${PROJECT_SOURCE_DIR}/NES Emulator/resources/nestest.nes" $<TARGET_FILE_DIR:nesemu>
 )
+
+install(TARGETS nesemu)
+
+install(
+	FILES "${PROJECT_SOURCE_DIR}/NES Emulator/resources/nestest.nes"
+	DESTINATION bin
+)
+
+if(WIN32)
+	install(FILES ${PROJECT_SOURCE_DIR}/SDLFramework/3rdparty/lib/SDL2.dll DESTINATION bin)
+endif(WIN32)

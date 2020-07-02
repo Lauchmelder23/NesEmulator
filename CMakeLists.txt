@@ -18,6 +18,8 @@ if(WIN32)
 	)
 else()
 	find_package(SDL2 REQUIRED)
+
+	SET(CMAKE_CXX_FLAGS -pthread)
 endif(WIN32)
 
 # Include sub-projects.
