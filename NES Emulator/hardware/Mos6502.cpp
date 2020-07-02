@@ -48,7 +48,7 @@ Mos6502::Mos6502() :
 		MAKE_ILLEGAL("NOP*", ILL_NOP, ABX, 4),
 		MAKE(ORA, ABX, 4),
 		MAKE(ASL, ABX, 7),
-		MAKE_ILLEGAL("SLO*", ILL_SLO, ABX, 8),
+		MAKE_ILLEGAL("SLO*", ILL_SLO, ABX, 7),
 
 		// 0x20
 		MAKE(JSR, ABS, 6),
@@ -297,7 +297,7 @@ Mos6502::Mos6502() :
 		MAKE(SBC, ABY, 4),
 		MAKE_ILLEGAL("NOP*", ILL_NOP, IMP, 2),
 		MAKE_ILLEGAL("ISC*", ILL_ISC, ABY, 7),
-		MAKE_ILLEGAL("NOP*", ILL_NOP, ABY, 4),
+		MAKE_ILLEGAL("NOP*", ILL_NOP, ABX, 4),
 		MAKE(SBC, ABX, 4),
 		MAKE(INC, ABX, 7),
 		MAKE_ILLEGAL("ISC*", ILL_ISC, ABX, 7),
@@ -316,7 +316,7 @@ void Mos6502::Tick()
 {
 	if (!m_isHalted)
 	{
-		//if (m_uCyclesTotal == 10428)
+		//if (m_uCyclesTotal == 14711)
 		//	__debugbreak();
 
 		if (m_uCycles == 0)
@@ -351,10 +351,6 @@ void Mos6502::Reset()
 	m_uPC = 0xC000; //TO_WORD(Read(0xFFFC), Read(0xFFFD));	// 0xFFFC is the reset vector
 
 	m_uFetched = 0x00;
-
-#ifdef BENCHMARKING
-	begin = std::chrono::steady_clock::now();
-#endif
 }
 
 void Mos6502::IRQ()
@@ -1128,6 +1124,13 @@ bool Mos6502::Execute()
 		return false;
 	}
 
+	
+	case ILL_AHX:	// ADDR = A & X & H
+	{
+		Write(m_uFetchedFrom, m_uAcc & m_uX & HI(m_uFetchedFrom));
+
+		return false;
+	}
 
 	case ILL_ALR:	// AND + LSR
 	{
@@ -1154,10 +1157,92 @@ bool Mos6502::Execute()
 		return false;
 	}
 
+	case ILL_ARR:	// AND + ROR
+	{
+		m_uAcc = m_uAcc & m_uFetched;
+		WORD result = (m_oStatus.Flag.Carry << 7);
+		result |= (m_uFetched >> 1);
+
+		m_oStatus.Flag.Carry = BIT_(0, m_uFetched);
+		m_oStatus.Flag.Zero = (result == 0);
+		m_oStatus.Flag.Negative = BIT_(7, result);
+
+		m_uAcc = result & 0x00FF;
+
+		return false;
+	}
+
+	case ILL_AXS:	// X = A & X - ADDR
+	{
+		WORD result = (m_uAcc & m_uX) - m_uFetched;
+
+		m_oStatus.Flag.Carry = BIT_(8, result);
+		m_oStatus.Flag.Zero = ((result & 0xFF) == 0x00);
+		m_oStatus.Flag.Negative = BIT_(7, result);
+
+		m_uX = (result & 0x00FF);
+
+		return false;
+	}
+
+	case ILL_DCP:	// ADDR = DEC + CMP
+	{
+		Write(m_uFetchedFrom, --m_uFetched);
+		
+		m_oStatus.Flag.Carry = (m_uAcc >= m_uFetched);
+		m_oStatus.Flag.Zero = (m_uAcc == m_uFetched);
+		m_oStatus.Flag.Negative = BIT_(7, (m_uAcc - m_uFetched));
+
+
+		return false;
+	}
+
+	case ILL_ISC:	//ADDR = INC + SBC
+	{
+		Write(m_uFetchedFrom, ++m_uFetched);
+		WORD result = (WORD)m_uAcc - m_uFetched - (1 - m_oStatus.Flag.Carry);
+		m_oStatus.Flag.Carry = false;
+
+		m_oStatus.Flag.Carry = !BIT_(8, result);
+		m_oStatus.Flag.Zero = ((result & 0x00FF) == 0x00);
+		m_oStatus.Flag.Negative = BIT_(7, result);
+
+		m_oStatus.Flag.Overflow = (((WORD)m_uFetched ^ (WORD)m_uAcc) & (result ^ (WORD)m_uAcc) & 0x0080) >> 7;
+
+		m_uAcc = result & 0x00FF;
+
+		return false;
+	}
+
 	case ILL_JAM:	// Literally halts the CPU and ends the universe
 	{
 		m_isHalted = true;
 		return false;
+	}
+
+	case ILL_LAS:	// SP, X, A = ADDR & SP
+	{
+		BYTE result = m_uFetched & m_uSP;
+
+		m_oStatus.Flag.Negative = BIT_(7, result);
+		m_oStatus.Flag.Zero = (result == 0x00);
+
+		m_uAcc = result;
+		m_uX = result;
+		m_uSP = result;
+
+		return true;
+	}
+
+	case ILL_LAX:	// A, X = Fetched
+	{
+		m_uAcc = m_uFetched;
+		m_uX = m_uFetched;
+
+		m_oStatus.Flag.Zero = (m_uFetched == 0x00);
+		m_oStatus.Flag.Negative = BIT_(7, m_uFetched);
+
+		return true;
 	}
 
 	case ILL_NOP:	// Illegal NOP
@@ -1171,29 +1256,67 @@ bool Mos6502::Execute()
 		result |= m_oStatus.Flag.Carry;	// Set bit 0 to carry
 		Write(m_uFetchedFrom, result);
 
-		m_uAcc = m_uAcc & result;
-
 		m_oStatus.Flag.Carry = BIT_(8, result);
-		m_oStatus.Flag.Zero = (m_uAcc == 0);
-		m_oStatus.Flag.Negative = BIT_(7, m_uAcc);
+		m_oStatus.Flag.Zero = ((result & 0x00FF) == 0);
+		m_oStatus.Flag.Negative = BIT_(7, result);
+
+		m_uAcc = m_uAcc & result;
 
 		return false;
 	}
 
-	case ILL_RRA:
+	case ILL_RRA:	// ROR + ADC
 	{
 		WORD result = (m_oStatus.Flag.Carry << 7);
 		result |= (m_uFetched >> 1);
 		m_oStatus.Flag.Carry = BIT_(0, m_uFetched);
 		Write(m_uFetchedFrom, result);
 
-		result = m_uAcc + result + m_oStatus.Flag.Carry;
+		WORD addition = m_uAcc + result + m_oStatus.Flag.Carry;
 
-		m_oStatus.Flag.Carry = BIT_(8, result);
-		m_oStatus.Flag.Zero = (result == 0);
+		m_oStatus.Flag.Carry = BIT_(8, addition);
+		m_oStatus.Flag.Zero = ((addition & 0x00FF) == 0);
+		m_oStatus.Flag.Negative = BIT_(7, addition);
+		m_oStatus.Flag.Overflow = (~((WORD)result ^ (WORD)m_uAcc) & (addition ^ (WORD)m_uAcc) & 0x0080) >> 7;
+
+		m_uAcc = addition & 0x00FF;
+
+		return false;
+	}
+
+	case ILL_SAX:	// ADDR = A & X
+	{
+		Write(m_uFetchedFrom, m_uAcc & m_uX);
+
+		return false;
+	}
+
+	case ILL_SBC:	// ACC - ADDR
+	{
+		WORD result = (WORD)m_uAcc - m_uFetched - (1 - m_oStatus.Flag.Carry);
+		m_oStatus.Flag.Carry = false;
+
+		m_oStatus.Flag.Carry = !BIT_(8, result);
+		m_oStatus.Flag.Zero = ((result & 0x00FF) == 0x00);
 		m_oStatus.Flag.Negative = BIT_(7, result);
 
+		m_oStatus.Flag.Overflow = (((WORD)m_uFetched ^ (WORD)m_uAcc) & (result ^ (WORD)m_uAcc) & 0x0080) >> 7;
+
 		m_uAcc = result & 0x00FF;
+
+		return true;
+	}
+
+	case ILL_SHX:
+	{
+		Write(m_uFetchedFrom, m_uX & HI(m_uFetchedFrom));
+
+		return false;
+	}
+
+	case ILL_SHY:	// ADDR = Y & H
+	{
+		Write(m_uFetchedFrom, m_uY & HI(m_uFetchedFrom));
 
 		return false;
 	}
@@ -1208,8 +1331,6 @@ bool Mos6502::Execute()
 		m_oStatus.Flag.Zero = (m_uAcc == 0);
 		m_oStatus.Flag.Negative = BIT_(7, m_uAcc);
 
-		m_uAcc = (result & 0x00FF);
-
 		return false;
 	}
 
@@ -1223,6 +1344,24 @@ bool Mos6502::Execute()
 		m_oStatus.Flag.Carry = BIT_(0, m_uFetched);
 		m_oStatus.Flag.Zero = (m_uAcc == 0x00);
 		m_oStatus.Flag.Negative = BIT_(7, m_uAcc);
+
+		return false;
+	}
+
+	case ILL_TAS:	// SP = A & X. ADDR = SP & H (wtf?)
+	{
+		m_uSP = m_uAcc & m_uX;
+		Write(m_uFetchedFrom, m_uSP & HI(m_uFetchedFrom));
+
+		return false;
+	}
+
+	case ILL_XAA:	// TXA + AND
+	{
+		m_uAcc = m_uX & m_uFetched;
+
+		m_oStatus.Flag.Negative = BIT_(7, m_uAcc);
+		m_oStatus.Flag.Zero = (m_uAcc == 0x00);
 
 		return false;
 	}

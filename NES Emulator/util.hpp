@@ -17,6 +17,8 @@ typedef uint16_t WORD;
 #define HEX(p, x, w) p << std::setfill('0') << std::setw(w) << std::hex << std::uppercase << (WORD)x // fancy hex output
 
 #define BIT_(n, x) ((x & (1 << n)) >> n)	// Masks the input with the bit at position n
+#define HI(x) ((x & 0xFF00) >> 8)	// Gets the high byte of a WORD
+#define LO(x) (x & 0x00FF)			// Gets the low byte of a WORD
 
 
 #define PushTo(x) Write(0x0100 + (m_uSP--), x)	// Pushes to stack
