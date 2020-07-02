@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <cstring>
 
 Cartridge::Cartridge(const char* filename) :
 	m_pCHRMemory(nullptr), m_pPRGMemory(nullptr), m_pUsedMapper(nullptr)
