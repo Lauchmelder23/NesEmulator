@@ -1,5 +1,6 @@
 #include "Cartridge.hpp"
 
+#include <iostream>
 #include <fstream>
 
 Cartridge::Cartridge(const char* filename) :
@@ -8,33 +9,35 @@ Cartridge::Cartridge(const char* filename) :
 	Header header;
 
 	std::ifstream ifs(filename, std::ios::binary);
-	if (ifs.is_open())
+	if (!ifs.is_open())
 	{
-		ifs.read(reinterpret_cast<char*>(&header), sizeof(Header));	// Naughty
-
-		// I dont care about trainer data
-		if (BIT_(2, header.MapperFlag1))
-			ifs.seekg(512, std::ios_base::cur);
-
-		m_uMapperID = ((header.MapperFlag1 & 0xF0) >> 4) | (header.MapperFlag2 & 0xF0);
-
-		// Read PRG memory
-		m_uPRGBanks = header.PRGsize;
-		m_pPRGMemory = new BYTE[0x4000 * (uint64_t)m_uPRGBanks];
-		ifs.read(reinterpret_cast<char*>(m_pPRGMemory), 0x4000 * (uint64_t)m_uPRGBanks);
-
-		// Read CHR memory
-		m_uCHRBanks = header.CHRsize;
-		m_pCHRMemory = new BYTE[0x2000 * (uint64_t)m_uCHRBanks];
-		ifs.read(reinterpret_cast<char*>(m_pCHRMemory), 0x2000 * (uint64_t)m_uCHRBanks);
-
-		switch (m_uMapperID)
-		{
-		case 0: m_pUsedMapper = new Mapper_000(m_uPRGBanks, m_uCHRBanks);
-		}
-
-		ifs.close();
+		std::cerr << "Failed to open file: " << std::strerror(errno) << std::endl;
 	}
+
+	ifs.read(reinterpret_cast<char*>(&header), sizeof(Header));	// Naughty
+
+	// I dont care about trainer data
+	if (BIT_(2, header.MapperFlag1))
+		ifs.seekg(512, std::ios_base::cur);
+
+	m_uMapperID = ((header.MapperFlag1 & 0xF0) >> 4) | (header.MapperFlag2 & 0xF0);
+
+	// Read PRG memory
+	m_uPRGBanks = header.PRGsize;
+	m_pPRGMemory = new BYTE[0x4000 * (uint64_t)m_uPRGBanks];
+	ifs.read(reinterpret_cast<char*>(m_pPRGMemory), 0x4000 * (uint64_t)m_uPRGBanks);
+
+	// Read CHR memory
+	m_uCHRBanks = header.CHRsize;
+	m_pCHRMemory = new BYTE[0x2000 * (uint64_t)m_uCHRBanks];
+	ifs.read(reinterpret_cast<char*>(m_pCHRMemory), 0x2000 * (uint64_t)m_uCHRBanks);
+
+	switch (m_uMapperID)
+	{
+	case 0: m_pUsedMapper = new Mapper_000(m_uPRGBanks, m_uCHRBanks);
+	}
+
+	ifs.close();
 }
 
 Cartridge::~Cartridge()
