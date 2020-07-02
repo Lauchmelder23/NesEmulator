@@ -347,6 +347,10 @@ void Mos6502::Reset()
 
 	m_uPC = TO_WORD(Read(0xFFFC), Read(0xFFFD));	// 0xFFFC is the reset vector
 
+#ifdef NESTEST_CPU_ONLY
+	m_uPC = 0xC000;
+#endif // NESTEST_CPU_ONLY
+
 	m_uFetched = 0x00;
 
 	m_isHalted = false;
