@@ -24,7 +24,9 @@ int main(int argc, char** argv)
 	}
 
 	while (window.IsOpen())
-		1;
+	{
+		
+	}
 
 	window.Stop();
 
