@@ -316,9 +316,6 @@ void Mos6502::Tick()
 {
 	if (!m_isHalted)
 	{
-		//if (m_uCyclesTotal == 14711)
-		//	__debugbreak();
-
 		if (m_uCycles == 0)
 		{
 
@@ -351,6 +348,8 @@ void Mos6502::Reset()
 	m_uPC = 0xC000; //TO_WORD(Read(0xFFFC), Read(0xFFFD));	// 0xFFFC is the reset vector
 
 	m_uFetched = 0x00;
+
+	m_isHalted = false;
 }
 
 void Mos6502::IRQ()
@@ -1217,6 +1216,8 @@ bool Mos6502::Execute()
 	case ILL_JAM:	// Literally halts the CPU and ends the universe
 	{
 		m_isHalted = true;
+		m_uCycles = 1;	// After this instructions the cycles will be 0, thus keeping the window loop from getting stuck
+		m_uPC--;	// This will set the program counter to the JAM instruction
 		return false;
 	}
 

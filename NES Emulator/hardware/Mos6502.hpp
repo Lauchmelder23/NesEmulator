@@ -162,6 +162,7 @@ public:
 
 	void ConnectBus(Bus* bus) { m_pBus = bus; }
 	bool Done() { return (m_uCycles == 0); }
+	bool Halted() { return m_isHalted; }
 	
 	void Tick();
 	void Reset();
