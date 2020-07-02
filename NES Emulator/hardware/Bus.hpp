@@ -6,10 +6,12 @@
 #include "RP2C02.hpp"
 #include "Cartridge.hpp"
 
+class NESWindow;
+
 class Bus
 {
 public:
-	Bus();
+	Bus(NESWindow* parentWindow);
 	~Bus();
 
 	Mos6502 m_oCPU;
@@ -27,8 +29,10 @@ public:
 	void Reset();
 	void Clock();
 
-	std::string GetMemoryMap(WORD begin, WORD end);
-
 private:
+	void RenderData(WORD address, BYTE data);
+
 	uint64_t m_uClockCounter;
+
+	NESWindow* m_pParentWindow;
 };

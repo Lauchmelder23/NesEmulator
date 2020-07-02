@@ -12,12 +12,6 @@ bool NESWindow::OnCreate()
 	if (m_pTexture == nullptr)
 		return false;
 
-	m_pScreen = new SDL_Rect;
-	m_pScreen->x = 10;
-	m_pScreen->y = 10;
-	m_pScreen->w = SCREEN_WIDTH * SCALE;
-	m_pScreen->h = SCREEN_HEIGHT * SCALE;
-
 	m_pCartridge = new Cartridge(m_pFilename);
 	m_oNes.InsertCartridge(m_pCartridge);
 
@@ -35,11 +29,6 @@ bool NESWindow::OnEvent(const SDL_Event& event)
 {
 	if (event.type == SDL_KEYDOWN)
 	{
-		if (event.key.keysym.scancode == SDL_SCANCODE_SPACE)
-		{
-			
-		}
-
 		if (event.key.keysym.scancode == SDL_SCANCODE_R)
 			m_oNes.m_oCPU.Reset();
 
@@ -78,7 +67,9 @@ bool NESWindow::OnUpdate(double frametime)
 
 void NESWindow::OnRender(SDL_Renderer* renderer)
 {
-
+#ifndef RENDER_MEMORY
+	SDL_RenderCopy(renderer, m_pTexture, NULL, NULL);
+#endif // RENDER_MEMORY
 }
 
 void NESWindow::OnClose()

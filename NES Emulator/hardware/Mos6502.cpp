@@ -1,5 +1,6 @@
 #include "Mos6502.hpp"
 #include "Bus.hpp"
+#include "../editme.hpp"
 
 #include <sstream>
 #include <string.h>

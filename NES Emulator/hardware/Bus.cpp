@@ -1,10 +1,13 @@
 #include "Bus.hpp"
 #include <memory>
 #include <string.h>
-#include "../util.hpp"
 
-Bus::Bus() :
-	m_pCPURAM(nullptr)
+#include "../util.hpp"
+#include "../editme.hpp"
+#include "../NESWindow.hpp"
+
+Bus::Bus(NESWindow* parentWindow) :
+	m_pCPURAM(nullptr), m_pParentWindow(parentWindow)
 {
 	// Initialize and clear RAM
 	m_pCPURAM = new BYTE[0x800]; // The CPU can access 2KB of RAM (actually 8KB, but the 2KB are mirrored 3 times)
@@ -27,8 +30,13 @@ void Bus::WriteCPU(WORD address, BYTE data)
 
 	}
 	// Between 0x0000 and 0x1FFF we are accessing the CPU's RAM
-	if(IS_IN_RANGE(address, 0x0000, 0x1FFF))
+	if (IS_IN_RANGE(address, 0x0000, 0x1FFF))
+	{
 		m_pCPURAM[address & 0x7FF] = data;
+#ifdef RENDER_MEMORY
+		RenderData(address & 0x7FF, data);
+#endif // RENDER_MEMORY
+	}
 
 	// Between 0x2000 and 0x3FFF we are accessing PPU registers
 	else if (IS_IN_RANGE(address, 0x2000, 0x3FFF))
@@ -68,47 +76,9 @@ void Bus::Clock()
 {
 }
 
-std::string Bus::GetMemoryMap(WORD begin, WORD end)
+void Bus::RenderData(WORD address, BYTE data)
 {
-	/*
-	Layout:
-
-	$0000   00 00 00 00 00 00 00 00   00 00 00 00 00 00 00 00   |................|
-	$0010   00 00 00 00 00 00 00 00   00 00 00 00 00 00 00 00   |................|
-	. 
-	.
-	.
-	*/
-
-	begin -= (begin % 16);
-	end += (16 - (end % 16));
-
-	std::stringstream map;
-	for (WORD ptr = begin; ptr < end; ptr += 0x10)
-	{
-		// Print address in front
-		map << HEX("$", ptr, 4) << "   ";
-
-		// Print hex values
-		for (int i = 0; i < 0x10; i++)
-		{
-			map << HEX("", ReadCPU(ptr + i), 2) << " ";
-			if (!((i + 1) % 8))
-				map << "  ";
-		}
-
-		// Print ascii output
-		map << "|";
-		for (int i = 0; i < 0x10; i++)
-		{
-			BYTE b = ReadCPU(ptr + i);
-			if (std::isprint(b))
-				map << b;
-			else
-				map << ".";
-		}
-		map << "|\n";
-	}
-
-	return map.str();
+	SDL_Rect r = { (address % SCREEN_WIDTH) * SCALE, address / SCREEN_WIDTH * SCALE, SCALE, SCALE };
+	SDL_SetRenderDrawColor(m_pParentWindow->GetRenderer(), data, data, data, 255);
+	SDL_RenderFillRect(m_pParentWindow->GetRenderer(), &r);
 }

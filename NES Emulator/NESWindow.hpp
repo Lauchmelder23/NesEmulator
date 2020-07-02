@@ -6,9 +6,9 @@
 
 #include "Bus.hpp"
 
-#define SCREEN_WIDTH 1024
-#define SCREEN_HEIGHT 800
-#define SCALE 1
+#define SCREEN_WIDTH 256
+#define SCREEN_HEIGHT 240
+#define SCALE 3
 
 #define HEIGHT_PER_LINE 20
 
@@ -18,10 +18,12 @@ public:
 	NESWindow(const char* filename) :
 		IWindow(sf::Vec2u(SCREEN_WIDTH, SCREEN_HEIGHT)* SCALE, sf::Vec2i(100, 100), "NESemu",
 			SDL_WINDOW_SHOWN, SDL_RENDERER_TARGETTEXTURE),
-		m_pTexture(nullptr), m_pScreen(nullptr), m_pCartridge(nullptr), m_pFilename(filename)
+		m_pTexture(nullptr), m_pCartridge(nullptr), m_pFilename(filename), m_oNes(this)
 	{
-
+		
 	}
+
+	SDL_Renderer* GetRenderer() { return m_pRenderer; }
 
 private:
 	bool OnCreate() override;
@@ -34,7 +36,6 @@ private:
 
 private:
 	SDL_Texture* m_pTexture;
-	SDL_Rect* m_pScreen;
 
 	Bus m_oNes;
 	Cartridge* m_pCartridge;
