@@ -1,4 +1,4 @@
-name: C/C++ MacOS
+name: MacOS
 
 on:
   push:
