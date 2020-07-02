@@ -1,4 +1,4 @@
-name: C/C++ Ubuntu
+name: Ubuntu
 
 on:
   push:
