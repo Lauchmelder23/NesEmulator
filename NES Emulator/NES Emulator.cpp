@@ -3,13 +3,18 @@
 #include <iostream>
 #include "NESWindow.hpp"
 
-#undef main
-
-int main()
+int main(int argc, char** argv)
 {
+	if (argc != 2)
+	{
+		std::cerr << "Incorrect amount of arguments." << std::endl
+			<< "Usage: nesemu <NES ROM File>" << std::endl;
+		return 1;
+	}
+
 	SDL_Init(SDL_INIT_VIDEO);
 
-	NESWindow window;
+	NESWindow window(argv[1]);
 	try {
 		window.Launch(true);
 	}

@@ -12,7 +12,8 @@ Cartridge::Cartridge(const char* filename) :
 	std::ifstream ifs(filename, std::ios::binary);
 	if (!ifs.is_open())
 	{
-		std::cerr << "Failed to open file: " << std::strerror(errno) << std::endl;
+		std::cerr << "Failed to open file " << filename << ": " << std::strerror(errno) << std::endl;
+		return;
 	}
 
 	ifs.read(reinterpret_cast<char*>(&header), sizeof(Header));	// Naughty

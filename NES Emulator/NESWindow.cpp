@@ -18,7 +18,7 @@ bool NESWindow::OnCreate()
 	m_pScreen->w = SCREEN_WIDTH * SCALE;
 	m_pScreen->h = SCREEN_HEIGHT * SCALE;
 
-	m_pCartridge = new Cartridge("nestest.nes");
+	m_pCartridge = new Cartridge(m_pFilename);
 	m_oNes.InsertCartridge(m_pCartridge);
 
 	m_mapDisassemble = m_oNes.m_oCPU.Disassemble(0x0000, 0xFFFF);
