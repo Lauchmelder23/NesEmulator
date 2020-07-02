@@ -1,16 +1,6 @@
 # NES Emulator
 
 ## Installation
-### Windows
-Cloning this repo and running cmake should be enough on windows
+Simply clone the repository and generate your build files with cmake. Then build and install via `sudo make install`.
 
-### Linux / MacOS
-#### Requirements
-* SDL2
-* SDL_ttf
-* freetype6
-* libpng
-* zlib
-
-I'll probably handle this better in the future, but for now install all of those manually.
-Then set the appropriate CMake flags to the according library files._
+On Linux and MacOS you need to manually install the SDL2 sdk via your package manager.
