@@ -2,9 +2,9 @@ name: C/C++ MacOS
 
 on:
   push:
-    branches: [ workflow ]
+    branches: [ development ]
   pull_request:
-    branches: [ workflow ]
+    branches: [ development ]
 
 jobs:
   build:
