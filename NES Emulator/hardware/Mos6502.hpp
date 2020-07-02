@@ -148,13 +148,13 @@ public:
 	typedef BYTE AddressMode;
 	typedef BYTE Operation;
 
-	struct Instruction
+	typedef struct sInstruction
 	{
 		std::string name		= "";
 		Operation operation		= 0xFF;
 		AddressMode addressMode = 0xFF;
 		BYTE cycles = 0;
-	};
+	} Instruction;
 
 public:
 	Mos6502();
@@ -197,5 +197,5 @@ private:
 
 	bool m_isHalted;
 
-	std::vector<Instruction> m_vecLookup;
+	std::vector<Mos6502::Instruction> m_vecLookup;
 };

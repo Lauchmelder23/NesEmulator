@@ -26,11 +26,11 @@ public:
 	SDL_Renderer* GetRenderer() { return m_pRenderer; }
 
 private:
-	bool OnCreate() override;
-	bool OnEvent(const SDL_Event& event);
-	bool OnUpdate(double frametime) override;
-	void OnRender(SDL_Renderer* renderer) override;
-	void OnClose() override;
+	virtual bool OnCreate() override;
+	virtual bool OnEvent(const SDL_Event& event) override;
+	virtual bool OnUpdate(double frametime) override;
+	virtual void OnRender(SDL_Renderer* renderer) override;
+	virtual void OnClose() override;
 
 	void PrintCurrentInstruction();
 
