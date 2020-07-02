@@ -345,7 +345,7 @@ void Mos6502::Reset()
 	m_uCycles = 7;
 	m_uCyclesTotal = 0;
 
-	m_uPC = 0xC000; //TO_WORD(Read(0xFFFC), Read(0xFFFD));	// 0xFFFC is the reset vector
+	m_uPC = TO_WORD(Read(0xFFFC), Read(0xFFFD));	// 0xFFFC is the reset vector
 
 	m_uFetched = 0x00;
 
