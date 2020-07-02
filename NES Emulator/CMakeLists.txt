@@ -32,7 +32,7 @@ add_custom_command (TARGET nesemu POST_BUILD
 	COMMAND ${CMAKE_COMMAND} -E copy "${PROJECT_SOURCE_DIR}/NES Emulator/resources/nestest.nes" $<TARGET_FILE_DIR:nesemu>
 )
 
-install(TARGETS nesemu)
+install(TARGETS nesemu RUNTIME DESTINATION bin)
 
 install(
 	FILES "${PROJECT_SOURCE_DIR}/NES Emulator/resources/nestest.nes"
