@@ -20,8 +20,6 @@ bool NESWindow::OnCreate()
 	// Boot the NES
 	m_oNes.m_oCPU.Reset();
 
-	
-
 	return true;
 }
 

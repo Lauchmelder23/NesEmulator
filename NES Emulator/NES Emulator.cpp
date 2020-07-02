@@ -15,17 +15,12 @@ int main(int argc, char** argv)
 	SDL_Init(SDL_INIT_VIDEO);
 
 	NESWindow window(argv[1]);
-	try {
-		window.Launch(true);
-	}
-	catch (std::string e)
-	{
-		std::cout << e << std::endl;
-	}
+
+	window.Launch(true);
 
 	while (window.IsOpen())
 	{
-		
+		// :)
 	}
 
 	window.Stop();
