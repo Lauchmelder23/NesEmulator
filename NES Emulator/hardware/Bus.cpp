@@ -78,7 +78,10 @@ void Bus::Clock()
 
 void Bus::RenderData(WORD address, BYTE data)
 {
-	SDL_Rect r = { (address % SCREEN_WIDTH) * SCALE, address / SCREEN_WIDTH * SCALE, SCALE, SCALE };
+	SDL_Rect r = { (address % (SCREEN_WIDTH / SCALE - 1)) * (SCALE * 6), 
+		((address / (SCREEN_WIDTH / SCALE))) * SCALE * 6, 
+		SCALE * 6, 
+		SCALE * 6 };
 	SDL_SetRenderDrawColor(m_pParentWindow->GetRenderer(), data, data, data, 255);
 	SDL_RenderFillRect(m_pParentWindow->GetRenderer(), &r);
 }
