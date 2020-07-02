@@ -1,1 +1,27 @@
+name: C/C++ Ubuntu
 
+on:
+  push:
+    branches: [ workflow ]
+  pull_request:
+    branches: [ workflow ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install SDL2
+      run: sudo apt install libsdl2-dev
+    - name: submodules-init
+      uses: snickerbockers/submodules-init@v4
+    - name: run-cmake
+      uses: lukka/run-cmake@v2.5
+      with:
+        cmakeGenerator: UnixMakefiles
+    - name: make check
+      run: make check
+    - name: make distcheck
+      run: make distcheck
