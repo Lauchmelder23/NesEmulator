@@ -16,9 +16,9 @@ class NESWindow : public sf::IWindow
 {
 public:
 	NESWindow(const char* filename) :
-		IWindow(sf::Vec2u(SCREEN_WIDTH, SCREEN_HEIGHT)* SCALE, sf::Vec2i(100, 100), "NESemu",
+		IWindow(sf::Vec2u(SCREEN_WIDTH, SCREEN_HEIGHT)* SCALE + sf::Vec2u(100, 100), sf::Vec2i(100, 100), "NESemu",
 			SDL_WINDOW_SHOWN, SDL_RENDERER_TARGETTEXTURE),
-		m_pTexture(nullptr), m_pCartridge(nullptr), m_pFilename(filename), m_oNes(this)
+		m_pCartridge(nullptr), m_pFilename(filename), m_oNes(this)
 	{
 		
 	}
@@ -35,11 +35,10 @@ private:
 	void PrintCurrentInstruction();
 
 private:
-	SDL_Texture* m_pTexture;
-
 	Bus m_oNes;
 	Cartridge* m_pCartridge;
 
+	bool m_bEmulate = false;
 	const char* m_pFilename;
 
 	std::map<WORD, std::string> m_mapDisassemble;

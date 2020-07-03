@@ -8,7 +8,7 @@
 // This will print a number of infos about the currently 
 // executed instructions to the console.
 //
-#define PRINT_INSTRUCTIONS
+// #define PRINT_INSTRUCTIONS
 //
 ///////////////////////////////////////////////////////////
 
@@ -32,6 +32,6 @@
 // This blocks normal rendering and instead uses the screen
 // to represent the current CPU RAM.
 //
-#define RENDER_MEMORY
+// #define RENDER_MEMORY
 //
 ///////////////////////////////////////////////////////////

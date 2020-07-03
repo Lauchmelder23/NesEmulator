@@ -74,6 +74,13 @@ void Bus::Reset()
 
 void Bus::Clock()
 {
+	m_oPPU.Tick();
+	if (m_uClockCounter % 3 == 0)
+	{
+		m_oCPU.Tick();
+	}
+
+	m_uClockCounter++;
 }
 
 void Bus::RenderData(WORD address, BYTE data)

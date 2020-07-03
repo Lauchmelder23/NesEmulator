@@ -5,19 +5,13 @@
 
 bool NESWindow::OnCreate()
 {
-	// Create the NES screen
-	m_pTexture = SDL_CreateTexture(m_pRenderer, SDL_PIXELFORMAT_RGB888,
-		SDL_TextureAccess::SDL_TEXTUREACCESS_TARGET, SCREEN_WIDTH, SCREEN_HEIGHT);
-
-	if (m_pTexture == nullptr)
-		return false;
-
 	m_pCartridge = new Cartridge(m_pFilename);
 	m_oNes.InsertCartridge(m_pCartridge);
 
 	m_mapDisassemble = m_oNes.m_oCPU.Disassemble(0x0000, 0xFFFF);
 
 	// Boot the NES
+	m_oNes.m_oPPU.Initialize(m_pRenderer);
 	m_oNes.m_oCPU.Reset();
 
 	return true;
@@ -25,18 +19,44 @@ bool NESWindow::OnCreate()
 
 bool NESWindow::OnEvent(const SDL_Event& event)
 {
-	if (event.type == SDL_KEYDOWN)
+	if (event.type == SDL_KEYUP)
 	{
-		if (event.key.keysym.scancode == SDL_SCANCODE_R)
-			m_oNes.m_oCPU.Reset();
+		if (event.key.keysym.scancode == SDL_SCANCODE_SPACE)
+		{
+			m_bEmulate = !m_bEmulate;
+		}
+
+		if(!m_bEmulate)
+		{
+			if (event.key.keysym.scancode == SDL_SCANCODE_C && !m_oNes.m_oCPU.Halted())
+			{
+#ifdef PRINT_INSTRUCTIONS
+				PrintCurrentInstruction();
+#endif // PRINT_INSTRUCTIONS
+
+				do { m_oNes.Clock(); } while (!m_oNes.m_oCPU.Done());
+				do { m_oNes.Clock(); } while (m_oNes.m_oCPU.Done());
+			}
+
+			if (event.key.keysym.scancode == SDL_SCANCODE_F)
+			{
+				do { m_oNes.Clock(); } while (!m_oNes.m_oPPU.isFrameComplete);
+				do { m_oNes.Clock(); } while (!m_oNes.m_oCPU.Done());
+				m_oNes.m_oPPU.isFrameComplete = false;
+			}
+
+			if (event.key.keysym.scancode == SDL_SCANCODE_R)
+				m_oNes.m_oCPU.Reset();
 
 
-		if (event.key.keysym.scancode == SDL_SCANCODE_I)
-			m_oNes.m_oCPU.IRQ();
+			if (event.key.keysym.scancode == SDL_SCANCODE_I)
+				m_oNes.m_oCPU.IRQ();
 
 
-		if (event.key.keysym.scancode == SDL_SCANCODE_N)
-			m_oNes.m_oCPU.NMI();
+			if (event.key.keysym.scancode == SDL_SCANCODE_N)
+				m_oNes.m_oCPU.NMI();
+		}
+		
 	}
 
 	return true;
@@ -44,21 +64,12 @@ bool NESWindow::OnEvent(const SDL_Event& event)
 
 bool NESWindow::OnUpdate(double frametime)
 {
-	try {
-		do
-		{
-			m_oNes.m_oCPU.Tick();
-		} while (!m_oNes.m_oCPU.Done());
-	}
-	catch (std::string s)
+	if (m_bEmulate)
 	{
-		std::cerr << s << std::endl;
-		return false;
+		do { m_oNes.Clock(); } while (!m_oNes.m_oPPU.isFrameComplete);
+		do { m_oNes.Clock(); } while (!m_oNes.m_oCPU.Done());
+		m_oNes.m_oPPU.isFrameComplete = false;
 	}
-
-#ifdef PRINT_INSTRUCTIONS
-	PrintCurrentInstruction();
-#endif // PRINT_INSTRUCTIONS
 
 	return true;
 }
@@ -66,13 +77,17 @@ bool NESWindow::OnUpdate(double frametime)
 void NESWindow::OnRender(SDL_Renderer* renderer)
 {
 #ifndef RENDER_MEMORY
-	SDL_RenderCopy(renderer, m_pTexture, NULL, NULL);
+	SDL_SetRenderTarget(renderer, NULL);
+	SDL_SetRenderDrawColor(renderer, 100, 0, 100, 255);
+	SDL_RenderClear(renderer);
+	SDL_RenderCopy(renderer, m_oNes.m_oPPU.GetScreen(), NULL, new SDL_Rect{ 10, 10, SCREEN_WIDTH * 2, SCREEN_HEIGHT * 2 });
+	SDL_SetRenderTarget(renderer, m_oNes.m_oPPU.GetScreen());
 #endif // RENDER_MEMORY
 }
 
 void NESWindow::OnClose()
 {
-	SDL_DestroyTexture(m_pTexture);
+	
 }
 
 void NESWindow::PrintCurrentInstruction()
