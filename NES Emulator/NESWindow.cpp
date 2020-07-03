@@ -10,6 +10,10 @@ bool NESWindow::OnCreate()
 
 	m_mapDisassemble = m_oNes.m_oCPU.Disassemble(0x0000, 0xFFFF);
 
+#ifdef LOG_INSTRUCTIONS
+	file.open("dump.log");
+#endif
+
 	// Boot the NES
 	m_oNes.m_oPPU.Initialize(m_pRenderer);
 	m_oNes.m_oCPU.Reset();
@@ -37,10 +41,6 @@ bool NESWindow::OnEvent(const SDL_Event& event)
 			{
 				do { m_oNes.Clock(); } while (!m_oNes.m_oCPU.Done());
 				do { m_oNes.Clock(); } while (m_oNes.m_oCPU.Done());
-
-#ifdef PRINT_INSTRUCTIONS
-				PrintCurrentInstruction();
-#endif // PRINT_INSTRUCTIONS
 			}
 
 			if (event.key.keysym.scancode == SDL_SCANCODE_F)
@@ -99,7 +99,10 @@ void NESWindow::OnRender(SDL_Renderer* renderer)
 
 void NESWindow::OnClose()
 {
-	
+#ifdef LOG_INSTRUCTIONS
+	if (file.is_open())
+		file.close();
+#endif
 }
 
 void NESWindow::PrintCurrentInstruction()
@@ -127,6 +130,10 @@ void NESWindow::PrintCurrentInstruction()
 	ss << "(" << std::dec << m_oNes.m_oPPU.GetScanline() << ", " << m_oNes.m_oPPU.GetCycle() - 1 << ")" << std::endl;
 
 	std::cout << ss.str();
+
+#ifdef LOG_INSTRUCTIONS
+	file << ss.str();
+#endif
 }
 
 void NESWindow::RenderPatternTables()

@@ -75,6 +75,14 @@ void Bus::Clock()
 	if (m_uClockCounter % 3 == 0)
 	{
 		m_oCPU.Tick();
+
+#ifdef PRINT_INSTRUCTIONS
+		if (m_oCPU.Done())
+		{
+			m_pParentWindow->PrintCurrentInstruction();
+		}
+#endif // PRINT_INSTRUCTIONS
+
 	}
 
 	m_uClockCounter++;

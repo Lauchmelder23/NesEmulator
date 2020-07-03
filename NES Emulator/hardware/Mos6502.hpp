@@ -2,8 +2,9 @@
 #include <vector>
 #include <map>
 #include <sstream>
-
 #include "../util.hpp"
+
+
 
 ///////////////// Internal values for opcodes //////////////////
 #pragma region Opcodes
@@ -184,7 +185,8 @@ private:
 	void Write(WORD address, BYTE value);
 
 	bool Execute();
-	BYTE Fetch();
+	WORD GetAddress();
+	void Fetch();
 
 private:
 	Bus* m_pBus;

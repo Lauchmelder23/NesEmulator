@@ -317,15 +317,17 @@ void Mos6502::Tick()
 {
 	if (!m_isHalted)
 	{
+
 		if (m_uCycles == 0)
 		{
+			m_oStatus.Flag.Unused = 1;
 
 			m_uOpcode = Read(m_uPC);	// Read Opcode from memory
 			m_uPC++;
 
 			m_uCycles = m_vecLookup[m_uOpcode].cycles;
 
-			Fetch();	// Get Addressing mode, write the value for the operation to m_uFetched
+			GetAddress();	// Get Addressing mode, write the value for the operation to m_uFetched
 			bool m_bSwitch = Execute();
 			if (m_bSwitchedPage && m_bSwitch)
 				m_uCycles++;
@@ -510,6 +512,7 @@ bool Mos6502::Execute()
 	{
 	case ADC:	// ACC = ACC + M + C
 	{
+		Fetch();
 		WORD result = (WORD)m_uAcc + m_uFetched + m_oStatus.Flag.Carry;
 		m_oStatus.Flag.Carry = false;
 
@@ -533,6 +536,7 @@ bool Mos6502::Execute()
 
 	case AND:	// ACC = ACC & Memory
 	{
+		Fetch();
 		m_uAcc = m_uAcc & m_uFetched;
 
 		// Set Flags if needed
@@ -544,6 +548,7 @@ bool Mos6502::Execute()
 
 	case ASL:	// Arithmetic shift left
 	{
+		Fetch();
 		WORD result = (WORD)m_uFetched << 1;
 
 		m_oStatus.Flag.Carry = BIT_(8, result);
@@ -561,6 +566,7 @@ bool Mos6502::Execute()
 
 	case BCC:	// Branch on Carry Clear
 	{
+		Fetch();
 		if (!m_oStatus.Flag.Carry)
 		{
 			m_uCycles++;
@@ -577,6 +583,7 @@ bool Mos6502::Execute()
 
 	case BCS:	// Branch on Carry Set
 	{
+		Fetch();
 		if (m_oStatus.Flag.Carry)
 		{
 			m_uCycles++;
@@ -593,6 +600,7 @@ bool Mos6502::Execute()
 
 	case BEQ:	// Branch on equal (Z = 1)
 	{
+		Fetch();
 		if (m_oStatus.Flag.Zero)
 		{
 			m_uCycles++;
@@ -609,6 +617,7 @@ bool Mos6502::Execute()
 
 	case BIT:	// Test bits in memory with accumulator
 	{
+		Fetch();
 		BYTE result = m_uAcc & m_uFetched;
 		
 		m_oStatus.Flag.Zero = (result == 0x00);
@@ -620,6 +629,7 @@ bool Mos6502::Execute()
 
 	case BMI:	// Branch on Minus
 	{
+		Fetch();
 		if (m_oStatus.Flag.Negative)
 		{
 			m_uCycles++;
@@ -636,6 +646,7 @@ bool Mos6502::Execute()
 
 	case BNE:	// Branch on not equal (Z = 0)
 	{
+		Fetch();
 		if (!m_oStatus.Flag.Zero)
 		{
 			m_uCycles++;
@@ -652,6 +663,7 @@ bool Mos6502::Execute()
 
 	case BPL:	// Branch on plus
 	{
+		Fetch();
 		if (!m_oStatus.Flag.Negative)
 		{
 			m_uCycles++;
@@ -685,6 +697,7 @@ bool Mos6502::Execute()
 
 	case BVC:	// Branch on overflow clear
 	{
+		m_uFetched = Read(m_uFetchedFrom);
 		if (!m_oStatus.Flag.Overflow)
 		{
 			m_uCycles++;
@@ -701,6 +714,7 @@ bool Mos6502::Execute()
 
 	case BVS:	// Branch on overflow set
 	{
+		m_uFetched = Read(m_uFetchedFrom);
 		if (m_oStatus.Flag.Overflow)
 		{
 			m_uCycles++;
@@ -741,6 +755,7 @@ bool Mos6502::Execute()
 
 	case CMP:	// Compare Accumulator and memory
 	{
+		m_uFetched = Read(m_uFetchedFrom);
 		m_oStatus.Flag.Carry = (m_uAcc >= m_uFetched);
 		m_oStatus.Flag.Zero = (m_uAcc == m_uFetched);
 		m_oStatus.Flag.Negative = BIT_(7, (m_uAcc - m_uFetched));
@@ -750,6 +765,7 @@ bool Mos6502::Execute()
 
 	case CPX:	// Compary X and Memory
 	{
+		m_uFetched = Read(m_uFetchedFrom);
 		m_oStatus.Flag.Carry = (m_uX >= m_uFetched);
 		m_oStatus.Flag.Zero = (m_uX == m_uFetched);
 		m_oStatus.Flag.Negative = BIT_(7, (m_uX - m_uFetched));
@@ -759,6 +775,7 @@ bool Mos6502::Execute()
 
 	case CPY:	// Compary Y and Memory
 	{
+		m_uFetched = Read(m_uFetchedFrom);
 		m_oStatus.Flag.Carry = (m_uY >= m_uFetched);
 		m_oStatus.Flag.Zero = (m_uY == m_uFetched);
 		m_oStatus.Flag.Negative = BIT_(7, (m_uY - m_uFetched));
@@ -768,6 +785,7 @@ bool Mos6502::Execute()
 
 	case DEC:	// Decrement memory by 1
 	{
+		m_uFetched = Read(m_uFetchedFrom);
 		BYTE result = --m_uFetched;
 		
 		m_oStatus.Flag.Zero = (result == 0x00);
@@ -800,6 +818,7 @@ bool Mos6502::Execute()
 
 	case EOR:	// XOR
 	{
+		m_uFetched = Read(m_uFetchedFrom);
 		m_uAcc ^= m_uFetched;
 
 		m_oStatus.Flag.Zero = (m_uAcc == 0x00);
@@ -810,6 +829,7 @@ bool Mos6502::Execute()
 
 	case INC:	// Increment memory by 1
 	{
+		m_uFetched = Read(m_uFetchedFrom);
 		BYTE result = ++m_uFetched;
 
 		m_oStatus.Flag.Zero = (result == 0x00);
@@ -861,6 +881,7 @@ bool Mos6502::Execute()
 
 	case LDA:	// Load Accumulator
 	{
+		m_uFetched = Read(m_uFetchedFrom);
 		m_uAcc = m_uFetched;
 
 		m_oStatus.Flag.Zero = (m_uAcc == 0x00);
@@ -871,6 +892,7 @@ bool Mos6502::Execute()
 
 	case LDX:	// Load X
 	{
+		Fetch();
 		m_uX = m_uFetched;
 
 		m_oStatus.Flag.Zero = (m_uX == 0x00);
@@ -881,6 +903,7 @@ bool Mos6502::Execute()
 
 	case LDY:	// Load Y
 	{
+		Fetch();
 		m_uY = m_uFetched;
 
 		m_oStatus.Flag.Zero = (m_uY == 0x00);
@@ -891,6 +914,7 @@ bool Mos6502::Execute()
 
 	case LSR:	// Logical shift right
 	{
+		Fetch();
 		WORD result = (WORD)m_uFetched >> 1;
 
 		m_oStatus.Flag.Carry = BIT_(0, m_uFetched);
@@ -912,6 +936,7 @@ bool Mos6502::Execute()
 
 	case ORA:	// Logical inclusive OR
 	{
+		Fetch();
 		m_uAcc |= m_uFetched;
 
 		m_oStatus.Flag.Zero = (m_uAcc == 0x00);
@@ -950,6 +975,7 @@ bool Mos6502::Execute()
 
 	case ROL:	// Rotate left
 	{
+		Fetch();
 		WORD result = (m_uFetched << 1);
 		result |= m_oStatus.Flag.Carry;	// Set bit 0 to carry
 
@@ -967,6 +993,7 @@ bool Mos6502::Execute()
 
 	case ROR:	// Rotate right
 	{
+		Fetch();
 		WORD result = (m_oStatus.Flag.Carry << 7);
 		result |= (m_uFetched >> 1);
 
@@ -1008,6 +1035,7 @@ bool Mos6502::Execute()
 
 	case SBC:	// ACC = ACC - M - C
 	{
+		Fetch();
 		WORD result = (WORD)m_uAcc - m_uFetched - (1 - m_oStatus.Flag.Carry);
 		m_oStatus.Flag.Carry = false;
 
@@ -1138,6 +1166,7 @@ bool Mos6502::Execute()
 
 	case ILL_ALR:	// AND + LSR
 	{
+		Fetch();
 		m_uAcc = m_uAcc & m_uFetched;
 		WORD result = m_uAcc >> 1;
 
@@ -1152,6 +1181,7 @@ bool Mos6502::Execute()
 
 	case ILL_ANC:	// A = A & IMM
 	{
+		Fetch();
 		m_uAcc = m_uAcc & m_uFetched;
 
 		m_oStatus.Flag.Carry = BIT_(7, m_uAcc);
@@ -1163,6 +1193,7 @@ bool Mos6502::Execute()
 
 	case ILL_ARR:	// AND + ROR
 	{
+		Fetch();
 		m_uAcc = m_uAcc & m_uFetched;
 		WORD result = (m_oStatus.Flag.Carry << 7);
 		result |= (m_uFetched >> 1);
@@ -1178,6 +1209,7 @@ bool Mos6502::Execute()
 
 	case ILL_AXS:	// X = A & X - ADDR
 	{
+		Fetch();
 		WORD result = (m_uAcc & m_uX) - m_uFetched;
 
 		m_oStatus.Flag.Carry = BIT_(8, result);
@@ -1191,6 +1223,7 @@ bool Mos6502::Execute()
 
 	case ILL_DCP:	// ADDR = DEC + CMP
 	{
+		Fetch();
 		Write(m_uFetchedFrom, --m_uFetched);
 		
 		m_oStatus.Flag.Carry = (m_uAcc >= m_uFetched);
@@ -1203,6 +1236,7 @@ bool Mos6502::Execute()
 
 	case ILL_ISC:	//ADDR = INC + SBC
 	{
+		Fetch();
 		Write(m_uFetchedFrom, ++m_uFetched);
 		WORD result = (WORD)m_uAcc - m_uFetched - (1 - m_oStatus.Flag.Carry);
 		m_oStatus.Flag.Carry = false;
@@ -1228,6 +1262,7 @@ bool Mos6502::Execute()
 
 	case ILL_LAS:	// SP, X, A = ADDR & SP
 	{
+		Fetch();
 		BYTE result = m_uFetched & m_uSP;
 
 		m_oStatus.Flag.Negative = BIT_(7, result);
@@ -1242,6 +1277,7 @@ bool Mos6502::Execute()
 
 	case ILL_LAX:	// A, X = Fetched
 	{
+		Fetch();
 		m_uAcc = m_uFetched;
 		m_uX = m_uFetched;
 
@@ -1258,6 +1294,7 @@ bool Mos6502::Execute()
 
 	case ILL_RLA:	// ROL + AND
 	{
+		Fetch();
 		WORD result = (m_uFetched << 1);
 		result |= m_oStatus.Flag.Carry;	// Set bit 0 to carry
 		Write(m_uFetchedFrom, result);
@@ -1273,6 +1310,7 @@ bool Mos6502::Execute()
 
 	case ILL_RRA:	// ROR + ADC
 	{
+		Fetch();
 		WORD result = (m_oStatus.Flag.Carry << 7);
 		result |= (m_uFetched >> 1);
 		m_oStatus.Flag.Carry = BIT_(0, m_uFetched);
@@ -1299,6 +1337,7 @@ bool Mos6502::Execute()
 
 	case ILL_SBC:	// ACC - ADDR
 	{
+		Fetch();
 		WORD result = (WORD)m_uAcc - m_uFetched - (1 - m_oStatus.Flag.Carry);
 		m_oStatus.Flag.Carry = false;
 
@@ -1329,6 +1368,7 @@ bool Mos6502::Execute()
 
 	case ILL_SLO:	// ASL + ORA
 	{
+		Fetch();
 		WORD result = (WORD)m_uFetched << 1;
 		Write(m_uFetchedFrom, result & 0x00FF);
 		m_uAcc = m_uAcc | result;
@@ -1342,6 +1382,7 @@ bool Mos6502::Execute()
 
 	case ILL_SRE:
 	{
+		Fetch();
 		WORD result = (WORD)m_uFetched >> 1;
 		Write(m_uFetchedFrom, result);
 
@@ -1364,6 +1405,7 @@ bool Mos6502::Execute()
 
 	case ILL_XAA:	// TXA + AND
 	{
+		Fetch();
 		m_uAcc = m_uX & m_uFetched;
 
 		m_oStatus.Flag.Negative = BIT_(7, m_uAcc);
@@ -1378,42 +1420,43 @@ bool Mos6502::Execute()
 	} 
 }
 
-BYTE Mos6502::Fetch()
+WORD Mos6502::GetAddress()
 {
 	m_bSwitchedPage = false;
 	m_uFetchedFrom = 0x0000;
 	switch (m_vecLookup[m_uOpcode].addressMode)
 	{
 	case IMP:
-		SERVE(0x00);
+		return 0x0000;
 
 	case ACC:
-		SERVE(m_uAcc);
+		return 0x0000;
 
 	case IMM:
 		m_uFetchedFrom = m_uPC++;
-		SERVE(Read(m_uFetchedFrom));
+		return m_uFetchedFrom;
 
 	case ZPG:
 		m_uFetchedFrom = (0x00FF & Read(m_uPC++));
-		SERVE(Read(m_uFetchedFrom));
+		return m_uFetchedFrom;
 
 	case ABS:
 		// I pray to god that the Read()'s are executed in order or else
 		// the byte might be BE instead of LE
 		m_uFetchedFrom = TO_WORD(Read(m_uPC + 0), Read(m_uPC + 1));
 		m_uPC += 2;
-		SERVE(Read(m_uFetchedFrom));
+		return m_uFetchedFrom;
 
 	case REL:
-		SERVE(Read(m_uPC++));
+		m_uFetchedFrom = m_uPC++;
+		return m_uFetchedFrom;
 
 	case IND:
 	{
 		BYTE lo = Read(m_uPC++);
 		BYTE hi = Read(m_uPC++);
 		m_uFetchedFrom = TO_WORD(Read(TO_WORD(lo, hi)), Read(TO_WORD((lo + 0x01) & 0xFF, hi)));
-		SERVE(Read(m_uFetchedFrom));
+		return m_uFetchedFrom;
 	};
 
 	case ZPX:
@@ -1421,7 +1464,7 @@ BYTE Mos6502::Fetch()
 		BYTE lo = Read(m_uPC++);
 		m_bSwitchedPage = (lo + m_uX < lo);	// If lo + X is less than lo then we wrapped around
 		m_uFetchedFrom = TO_WORD((lo + m_uX) & 0xFF, 0x00);
-		SERVE(Read(m_uFetchedFrom));
+		return m_uFetchedFrom;
 	};
 
 	case ZPY:
@@ -1438,7 +1481,7 @@ BYTE Mos6502::Fetch()
 		BYTE hi = Read(m_uPC++);
 		m_uFetchedFrom = TO_WORD(lo, hi) + m_uX;
 		m_bSwitchedPage = (((m_uFetchedFrom & 0xFF00) >> 8) != hi);
-		SERVE(Read(m_uFetchedFrom));
+		return m_uFetchedFrom;
 	};
 
 	case ABY:
@@ -1447,14 +1490,14 @@ BYTE Mos6502::Fetch()
 		BYTE hi = Read(m_uPC++);
 		m_uFetchedFrom = TO_WORD(lo, hi) + m_uY;
 		m_bSwitchedPage = (((m_uFetchedFrom & 0xFF00) >> 8) != hi);
-		SERVE(Read(m_uFetchedFrom));
+		return m_uFetchedFrom;
 	};
 
 	case IDX:
 	{
 		BYTE offset = Read(m_uPC++);
 		m_uFetchedFrom = TO_WORD(Read((offset + m_uX) & 0xFF), Read((offset + m_uX + 1) & 0xFF));
-		SERVE(Read(m_uFetchedFrom));
+		return m_uFetchedFrom;
 	};
 
 	case IDY:
@@ -1464,11 +1507,19 @@ BYTE Mos6502::Fetch()
 		m_uFetchedFrom = TO_WORD(Read(offset), hi) + m_uY;
 		m_bSwitchedPage = (((m_uFetchedFrom & 0xFF00) >> 8) != hi);
 
-		SERVE(Read(m_uFetchedFrom));
+		return m_uFetchedFrom;
 	};
 
 	default:
-		SERVE(0x00);
+		return 0x0000;
 	}
+}
+
+void Mos6502::Fetch()
+{
+	if (m_vecLookup[m_uOpcode].addressMode == ACC)
+		m_uFetched = m_uAcc;
+	else
+		m_uFetched = Read(m_uFetchedFrom);
 }
 

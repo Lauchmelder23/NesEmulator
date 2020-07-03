@@ -4,6 +4,12 @@
 #include <SDLF.hpp>
 #include <sstream>
 
+#include "../editme.hpp"
+
+#ifdef LOG_INSTRUCTIONS
+#include <fstream>
+#endif
+
 #include "Bus.hpp"
 
 #define SCREEN_WIDTH 256
@@ -24,6 +30,7 @@ public:
 	}
 
 	SDL_Renderer* GetRenderer() { return m_pRenderer; }
+	void PrintCurrentInstruction();
 
 private:
 	virtual bool OnCreate() override;
@@ -32,7 +39,6 @@ private:
 	virtual void OnRender(SDL_Renderer* renderer) override;
 	virtual void OnClose() override;
 
-	void PrintCurrentInstruction();
 	void RenderPatternTables();
 	void RenderPalettes();
 
@@ -45,4 +51,7 @@ private:
 	const char* m_pFilename;
 
 	std::map<WORD, std::string> m_mapDisassemble;
+#ifdef LOG_INSTRUCTIONS
+	std::ofstream file;
+#endif
 };

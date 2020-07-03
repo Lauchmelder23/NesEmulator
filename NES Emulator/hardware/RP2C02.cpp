@@ -156,6 +156,7 @@ BYTE RP2C02::ReadCPU(WORD address, bool readonly)
 		// EXCEPT the palette data :)
 		if (m_nPPUAddress > 0x3F00) 
 			data = m_nPPUBuffer;
+		m_nPPUAddress++;
 		break;
 	}
 
@@ -201,6 +202,7 @@ void RP2C02::WriteCPU(WORD address, BYTE value)
 
 	case 0x0007:	// PPUDATA
 		WritePPU(m_nPPUAddress, value);
+		m_nPPUAddress++;
 		break;
 	}
 }
