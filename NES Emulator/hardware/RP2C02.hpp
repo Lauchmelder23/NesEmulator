@@ -47,6 +47,8 @@ public:
 	SDL_Texture* GetScreen();
 	SDL_Texture* GetNameTable(BYTE i);
 	SDL_Texture* GetPatternTable(BYTE i);
+	int16_t GetScanline() { return m_nScanline; }
+	int16_t GetCycle() { return m_nCycle; }
 
 	bool isFrameComplete = false;
 

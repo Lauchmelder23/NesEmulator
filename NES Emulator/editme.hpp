@@ -8,7 +8,7 @@
 // This will print a number of infos about the currently 
 // executed instructions to the console.
 //
-// #define PRINT_INSTRUCTIONS
+#define PRINT_INSTRUCTIONS
 //
 ///////////////////////////////////////////////////////////
 

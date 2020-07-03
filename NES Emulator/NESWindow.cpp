@@ -30,12 +30,12 @@ bool NESWindow::OnEvent(const SDL_Event& event)
 		{
 			if (event.key.keysym.scancode == SDL_SCANCODE_C && !m_oNes.m_oCPU.Halted())
 			{
+				do { m_oNes.Clock(); } while (!m_oNes.m_oCPU.Done());
+				do { m_oNes.Clock(); } while (m_oNes.m_oCPU.Done());
+
 #ifdef PRINT_INSTRUCTIONS
 				PrintCurrentInstruction();
 #endif // PRINT_INSTRUCTIONS
-
-				do { m_oNes.Clock(); } while (!m_oNes.m_oCPU.Done());
-				do { m_oNes.Clock(); } while (m_oNes.m_oCPU.Done());
 			}
 
 			if (event.key.keysym.scancode == SDL_SCANCODE_F)
@@ -110,7 +110,9 @@ void NESWindow::PrintCurrentInstruction()
 		<< "X=" << (WORD)m_oNes.m_oCPU.m_uX << ", "
 		<< "Y=" << (WORD)m_oNes.m_oCPU.m_uY << ", "
 		<< "S=" << (WORD)m_oNes.m_oCPU.m_uSP << ", "
-		<< "F=" << m_oNes.m_oCPU.m_oStatus.AsString() << " (" << HEX("", m_oNes.m_oCPU.m_oStatus.Raw, 2) << ")" << std::endl;
+		<< "F=" << m_oNes.m_oCPU.m_oStatus.AsString() << " [" << HEX("", m_oNes.m_oCPU.m_oStatus.Raw, 2) << "] ";
+
+	ss << "(" << std::dec << m_oNes.m_oPPU.GetScanline() << ", " << m_oNes.m_oPPU.GetCycle() - 1 << ")" << std::endl;
 
 	std::cout << ss.str();
 }
