@@ -1,5 +1,7 @@
 #include "RP2C02.hpp"
 
+#include <memory>
+
 RP2C02::RP2C02() :
 	m_pCartridge(nullptr), m_pNameTables(nullptr), m_pPaletteTable(nullptr), m_nScanline(0), m_nCycle(0)
 {
@@ -71,10 +73,19 @@ RP2C02::RP2C02() :
 	m_pPalette[0x3D] = { 160, 162, 160 };
 	m_pPalette[0x3E] = { 0, 0, 0 };
 	m_pPalette[0x3F] = { 0, 0, 0 };
+
+	m_pNameTables = new BYTE[2 * 1024];
+	m_pPaletteTable = new BYTE[32];
 }
 
 RP2C02::~RP2C02()
 {
+	delete[] m_pPaletteTable;
+	m_pPaletteTable = nullptr;
+
+	delete[] m_pNameTables;
+	m_pNameTables = nullptr;
+
 	SDL_DestroyTexture(m_pTexPatternTables[0]);
 	SDL_DestroyTexture(m_pTexPatternTables[1]);
 	delete[] m_pTexPatternTables;
@@ -115,19 +126,36 @@ BYTE RP2C02::ReadCPU(WORD address, bool readonly)
 	{
 	case 0x0000:	// PPUCTRL
 		break;
+
 	case 0x0001:	// PPUMASK
 		break;
+
 	case 0x0002:	// PPUSTATUS
+		// TODO: remove
+		m_oStatus.VBlank = 1;
+		data = (m_oStatus.Raw & 0xE0) | (m_nPPUBuffer & 0x1F);
+		m_oStatus.VBlank = 0;
+		m_nAddressLatch = 0x00;
 		break;
+
 	case 0x0003:	// OAMADDR
 		break;
 	case 0x0004:	// OAMDATA
 		break;
 	case 0x0005:	// PPUSCROLL
 		break;
+
 	case 0x0006:	// PPUADDR
+		// Does nothing
 		break;
+
 	case 0x0007:	// PPUDATA
+		data = m_nPPUBuffer;	// Data transfer needs to be buffered. It's delayed by 1 cycle
+		m_nPPUBuffer = ReadPPU(m_nPPUAddress);
+
+		// EXCEPT the palette data :)
+		if (m_nPPUAddress > 0x3F00) 
+			data = m_nPPUBuffer;
 		break;
 	}
 
@@ -141,11 +169,17 @@ void RP2C02::WriteCPU(WORD address, BYTE value)
 	switch (address)
 	{
 	case 0x0000:	// PPUCTRL
+		m_oControl.Raw = value;
 		break;
+
 	case 0x0001:	// PPUMASK
+		m_oMask.Raw = value;
 		break;
+
 	case 0x0002:	// PPUSTATUS
+		// Status cant be written to
 		break;
+
 	case 0x0003:	// OAMADDR
 		break;
 	case 0x0004:	// OAMDATA
@@ -153,8 +187,20 @@ void RP2C02::WriteCPU(WORD address, BYTE value)
 	case 0x0005:	// PPUSCROLL
 		break;
 	case 0x0006:	// PPUADDR
+		if (m_nAddressLatch == 0x00)
+		{
+			m_nPPUAddress = (m_nPPUAddress & 0x00FF) | (value << 8);
+			m_nAddressLatch = 0x01;
+		}
+		else
+		{
+			m_nPPUAddress = (m_nPPUAddress & 0xFF00) | value;
+			m_nAddressLatch = 0x00;
+		}
 		break;
+
 	case 0x0007:	// PPUDATA
+		WritePPU(m_nPPUAddress, value);
 		break;
 	}
 }
@@ -164,15 +210,67 @@ BYTE RP2C02::ReadPPU(WORD address, bool readonly)
 	BYTE data = 0x00;
 	address &= 0x3FFF;
 
+	if (m_pCartridge->ReadPPU(address, data))
+	{
+
+	}
+
+	// Nametables
+	else if (IS_IN_RANGE(address, 0x2000, 0x3EFF))
+	{
+
+	}
+
+	// Palette information
+	else if (IS_IN_RANGE(address, 0x3F00, 0x3FFF))
+	{
+		address &= 0x001F;
+
+		// Hardcode in the mirroring because I'm lazy
+		// TODO: figure this out
+		if (address == 0x0010) address = 0x0000;
+		if (address == 0x0014) address = 0x0004;
+		if (address == 0x0018) address = 0x0008;
+		if (address == 0x001C) address = 0x000C;
+
+		data = m_pPaletteTable[address];
+	}
+
 	return data;
 }
 
 void RP2C02::WritePPU(WORD address, BYTE value)
 {
 	address &= 0x3FFF;
+
+	if (m_pCartridge->WritePPU(address, value))
+	{
+
+	}
+
+	// Nametables
+	else if (IS_IN_RANGE(address, 0x2000, 0x3EFF))
+	{
+
+	}
+
+	// Palette information
+	else if (IS_IN_RANGE(address, 0x3F00, 0x3FFF))
+	{
+		address &= 0x001F;
+
+		// Hardcode in the mirroring because I'm lazy
+		// TODO: figure this out
+		if (address == 0x0010) address = 0x0000;
+		if (address == 0x0014) address = 0x0004;
+		if (address == 0x0018) address = 0x0008;
+		if (address == 0x001C) address = 0x000C;
+
+		m_pPaletteTable[address] = value;
+	}
 }
 
-void RP2C02::InsertCartridge(const Cartridge* cartridge)
+void RP2C02::InsertCartridge(Cartridge* cartridge)
 {
 	m_pCartridge = cartridge;
 }
@@ -199,6 +297,11 @@ void RP2C02::Tick()
 	
 }
 
+SDL_Color& RP2C02::PatternPixelScreenColour(BYTE paletteID, BYTE pixelValue)
+{
+	return m_pPalette[ReadPPU(0x3F00 + (paletteID << 2) + pixelValue)];
+}
+
 SDL_Texture* RP2C02::GetScreen()
 {
 	return m_pScreen;
@@ -209,7 +312,41 @@ SDL_Texture* RP2C02::GetNameTable(BYTE i)
 	return m_pTexNameTables[i];
 }
 
-SDL_Texture* RP2C02::GetPatternTable(BYTE i)
+SDL_Texture* RP2C02::GetPatternTable(BYTE i, BYTE palette)
 {
+	SDL_Texture* prevRenderTarget = SDL_GetRenderTarget(m_pRenderer);
+	SDL_SetRenderTarget(m_pRenderer, m_pTexPatternTables[i]);
+
+	// A pattern table is 16x16 "tiles"
+	for (BYTE tileY = 0; tileY < 16; tileY++)
+	{
+		for (BYTE tileX = 0; tileX < 16; tileX++)
+		{
+			// this is a 32 * 16 "tile" layout. (one tile = 8x8 bits)
+			WORD offset = tileY * 256 + tileX * 16;
+
+			for (BYTE row = 0; row < 8; row++)
+			{
+				BYTE tileLSB = ReadPPU(i * 0x1000 + offset + row + 0);
+				BYTE tileMSB = ReadPPU(i * 0x1000 + offset + row + 8);
+
+				for (BYTE col = 0; col < 8; col++)
+				{
+					BYTE pixel = (tileLSB & 0x01) + (tileMSB & 0x01);
+					tileLSB >>= 1;
+					tileMSB >>= 1;
+
+					SDL_Color c = PatternPixelScreenColour(palette, pixel);
+					SDL_SetRenderDrawColor(m_pRenderer, c.r, c.g, c.b, 255);
+					SDL_RenderDrawPoint(m_pRenderer,
+						tileX * 8 + (7 - col),
+						tileY * 8 + row
+						);
+				}
+			}
+		}
+	}
+
+	SDL_SetRenderTarget(m_pRenderer, prevRenderTarget);
 	return m_pTexPatternTables[i];
 }

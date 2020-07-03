@@ -33,11 +33,14 @@ private:
 	virtual void OnClose() override;
 
 	void PrintCurrentInstruction();
+	void RenderPatternTables();
+	void RenderPalettes();
 
 private:
 	Bus m_oNes;
 	Cartridge* m_pCartridge;
 
+	BYTE m_nSelectedPalette = 0x00;
 	bool m_bEmulate = false;
 	const char* m_pFilename;
 

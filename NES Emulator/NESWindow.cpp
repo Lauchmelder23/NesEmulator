@@ -26,6 +26,11 @@ bool NESWindow::OnEvent(const SDL_Event& event)
 			m_bEmulate = !m_bEmulate;
 		}
 
+		if (event.key.keysym.scancode == SDL_SCANCODE_P)
+		{
+			(++m_nSelectedPalette) &= 0x07;
+		}
+
 		if(!m_bEmulate)
 		{
 			if (event.key.keysym.scancode == SDL_SCANCODE_C && !m_oNes.m_oCPU.Halted())
@@ -76,13 +81,20 @@ bool NESWindow::OnUpdate(double frametime)
 
 void NESWindow::OnRender(SDL_Renderer* renderer)
 {
-#ifndef RENDER_MEMORY
 	SDL_SetRenderTarget(renderer, NULL);
+
+	// Clear screen (is this necessary?)
 	SDL_SetRenderDrawColor(renderer, 100, 0, 100, 255);
 	SDL_RenderClear(renderer);
-	SDL_RenderCopy(renderer, m_oNes.m_oPPU.GetScreen(), NULL, new SDL_Rect{ 10, 10, SCREEN_WIDTH * 2, SCREEN_HEIGHT * 2 });
+
+	// The main screen
+	SDL_RenderCopy(renderer, m_oNes.m_oPPU.GetScreen(), NULL, new SDL_Rect{ 10, 10, SCREEN_WIDTH * (SCALE - 1), SCREEN_HEIGHT * (SCALE - 1) });
+	
+	// The pattern memory
+	RenderPatternTables();
+	RenderPalettes();
+
 	SDL_SetRenderTarget(renderer, m_oNes.m_oPPU.GetScreen());
-#endif // RENDER_MEMORY
 }
 
 void NESWindow::OnClose()
@@ -115,4 +127,33 @@ void NESWindow::PrintCurrentInstruction()
 	ss << "(" << std::dec << m_oNes.m_oPPU.GetScanline() << ", " << m_oNes.m_oPPU.GetCycle() - 1 << ")" << std::endl;
 
 	std::cout << ss.str();
+}
+
+void NESWindow::RenderPatternTables()
+{
+	SDL_RenderCopy(m_pRenderer, m_oNes.m_oPPU.GetPatternTable(0, m_nSelectedPalette), NULL,
+		new SDL_Rect{ 10, 10 + SCREEN_HEIGHT * (SCALE - 1) + 20, 128 * (SCALE - 1), 128 * (SCALE - 1) });
+
+	SDL_RenderCopy(m_pRenderer, m_oNes.m_oPPU.GetPatternTable(1, m_nSelectedPalette), NULL,
+		new SDL_Rect{ 10 + 128 * (SCALE - 1) + 20, 10 + SCREEN_HEIGHT * (SCALE - 1) + 20, 128 * (SCALE - 1), 128 * (SCALE - 1) });
+}
+
+void NESWindow::RenderPalettes()
+{
+	SDL_Color c;
+	SDL_Rect rect;
+	rect.w = SCALE * 10;
+	rect.h = SCALE * 10;
+	for (BYTE palette = 0; palette < 0x08; palette++)
+	{
+		rect.y = 10 + (rect.h + 10) * palette;
+		for (BYTE color = 0; color < 0x04; color++)
+		{
+			rect.x = 10 + SCREEN_WIDTH * (SCALE - 1) + 20 + (rect.w * color);
+			rect.x += (palette == m_nSelectedPalette) ? rect.w / 2 : 0;
+			c = m_oNes.m_oPPU.PatternPixelScreenColour(palette, color);
+			SDL_SetRenderDrawColor(m_pRenderer, c.r, c.g, c.b, 255);
+			SDL_RenderFillRect(m_pRenderer, &rect);
+		}
+	}
 }

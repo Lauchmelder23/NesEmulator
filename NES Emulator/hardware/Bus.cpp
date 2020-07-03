@@ -33,9 +33,6 @@ void Bus::WriteCPU(WORD address, BYTE data)
 	if (IS_IN_RANGE(address, 0x0000, 0x1FFF))
 	{
 		m_pCPURAM[address & 0x7FF] = data;
-#ifdef RENDER_MEMORY
-		RenderData(address & 0x7FF, data);
-#endif // RENDER_MEMORY
 	}
 
 	// Between 0x2000 and 0x3FFF we are accessing PPU registers
@@ -81,14 +78,4 @@ void Bus::Clock()
 	}
 
 	m_uClockCounter++;
-}
-
-void Bus::RenderData(WORD address, BYTE data)
-{
-	SDL_Rect r = { (address % (SCREEN_WIDTH / SCALE - 1)) * (SCALE * 6), 
-		((address / (SCREEN_WIDTH / SCALE))) * SCALE * 6, 
-		SCALE * 6, 
-		SCALE * 6 };
-	SDL_SetRenderDrawColor(m_pParentWindow->GetRenderer(), data, data, data, 255);
-	SDL_RenderFillRect(m_pParentWindow->GetRenderer(), &r);
 }

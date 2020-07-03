@@ -30,7 +30,6 @@ public:
 	void Clock();
 
 private:
-	void RenderData(WORD address, BYTE data);
 
 	uint64_t m_uClockCounter;
 
