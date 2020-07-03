@@ -1,8 +1,8 @@
 # NES Emulator
 
-![C/C++ Windows](https://github.com/Lauchmelder23/NesEmulator/workflows/C/C++%20Windows/badge.svg?branch=development)
-![C/C++ Ubuntu](https://github.com/Lauchmelder23/NesEmulator/workflows/C/C++%20Ubuntu/badge.svg?branch=development)
-![C/C++ MacOS](https://github.com/Lauchmelder23/NesEmulator/workflows/C/C++%20MacOS/badge.svg?branch=development)
+![Windows](https://github.com/Lauchmelder23/NesEmulator/workflows/Windows/badge.svg?branch=development)
+![Ubuntu](https://github.com/Lauchmelder23/NesEmulator/workflows/Ubuntu/badge.svg?branch=development)
+![MacOS](https://github.com/Lauchmelder23/NesEmulator/workflows/MacOS/badge.svg?branch=development)
 
 ## Installation
 Simply clone the repository and generate your build files with cmake. Then build and install via `sudo make install`.
