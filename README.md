@@ -17,4 +17,5 @@ Before building the project you might want to have a look at `NES Emulator/editm
 * R - Reset the CPU
 * I - Interrupt
 * N - Non-maskable interrupt
+* P - Choose color palette
 * SPACE - Run continuously
