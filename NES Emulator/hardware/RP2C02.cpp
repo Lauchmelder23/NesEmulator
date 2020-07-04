@@ -3,7 +3,9 @@
 #include <memory>
 
 RP2C02::RP2C02() :
-	m_pCartridge(nullptr), m_pNameTables(nullptr), m_pPaletteTable(nullptr), m_nScanline(0), m_nCycle(0)
+	m_pCartridge(nullptr), m_pNameTables(nullptr), m_pPaletteTable(nullptr), m_nScanline(0), m_nCycle(0),
+	m_pTexNameTables(new SDL_Texture*[2] { nullptr, nullptr }), 
+	m_pTexPatternTables(new SDL_Texture* [2]{ nullptr, nullptr })
 {
 	m_pPalette[0x00] = {84, 84, 84};
 	m_pPalette[0x01] = {0, 30, 116};
@@ -131,8 +133,6 @@ BYTE RP2C02::ReadCPU(WORD address, bool readonly)
 		break;
 
 	case 0x0002:	// PPUSTATUS
-		// TODO: remove
-		m_oStatus.VBlank = 1;
 		data = (m_oStatus.Raw & 0xE0) | (m_nPPUBuffer & 0x1F);
 		m_oStatus.VBlank = 0;
 		m_nAddressLatch = 0x00;
@@ -279,9 +279,21 @@ void RP2C02::InsertCartridge(Cartridge* cartridge)
 
 void RP2C02::Tick()
 {
-	SDL_Color c = m_pPalette[(rand() % 2) ? 0x3F : 0x30];
-	SDL_SetRenderDrawColor(m_pRenderer, c.r, c.g, c.b, 255);
-	SDL_RenderDrawPoint(m_pRenderer, m_nCycle - 1, m_nScanline);
+	if (m_nScanline == 241 && m_nCycle == 1)
+	{
+		m_oStatus.VBlank = 1;
+		if (m_oControl.GenerateNMI)
+			isThrowingInterrupt = true;
+	}
+
+	if (m_nScanline == -1 && m_nCycle == 1)
+	{
+		m_oStatus.VBlank = 0;
+		m_oStatus.SpriteOverflow = 0;
+		m_oStatus.SpriteZeroHit = 0;
+	}
+
+
 
 	m_nCycle++;	
 	// Ugly hardcoding

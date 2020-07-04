@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <cstring>
+#include <sstream>
 
 Cartridge::Cartridge(const char* filename) :
 	m_pCHRMemory(nullptr), m_pPRGMemory(nullptr), m_pUsedMapper(nullptr)
@@ -12,8 +13,9 @@ Cartridge::Cartridge(const char* filename) :
 	std::ifstream ifs(filename, std::ios::binary);
 	if (!ifs.is_open())
 	{
-		std::cerr << "Failed to open file " << filename << ": " << std::strerror(errno) << std::endl;
-		return;
+		std::stringstream ss;
+		ss << "Failed to open file " << filename << ": " << std::strerror(errno);
+		throw ss.str().c_str();
 	}
 
 	ifs.read(reinterpret_cast<char*>(&header), sizeof(Header));	// Naughty
@@ -36,7 +38,14 @@ Cartridge::Cartridge(const char* filename) :
 
 	switch (m_uMapperID)
 	{
-	case 0: m_pUsedMapper = new Mapper_000(m_uPRGBanks, m_uCHRBanks);
+	case 0: m_pUsedMapper = new Mapper_000(m_uPRGBanks, m_uCHRBanks); break;
+	}
+
+	if (m_pUsedMapper == nullptr)
+	{
+		std::stringstream ss;
+		ss << "This ROM uses a Mapper that this emulator doesn't (yet) support! Mapper ID is: " << (WORD)m_uMapperID;
+		throw ss.str().c_str();
 	}
 
 	ifs.close();

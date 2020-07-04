@@ -82,8 +82,12 @@ void Bus::Clock()
 			m_pParentWindow->PrintCurrentInstruction();
 		}
 #endif // PRINT_INSTRUCTIONS
-
 	}
 
+	if (m_oPPU.isThrowingInterrupt)
+	{
+		m_oCPU.NMI();
+		m_oPPU.isThrowingInterrupt = false;
+	}
 	m_uClockCounter++;
 }
