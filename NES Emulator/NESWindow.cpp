@@ -5,7 +5,16 @@
 
 bool NESWindow::OnCreate()
 {
-	m_pCartridge = new Cartridge(m_pFilename);
+	try 
+	{
+		m_pCartridge = new Cartridge(m_pFilename);
+	}
+	catch (const char* e)
+	{
+		std::cerr << e << std::endl;
+		return false;
+	}
+
 	m_oNes.InsertCartridge(m_pCartridge);
 
 	m_mapDisassemble = m_oNes.m_oCPU.Disassemble(0x0000, 0xFFFF);

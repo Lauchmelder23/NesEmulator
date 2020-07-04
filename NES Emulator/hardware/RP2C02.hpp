@@ -105,6 +105,7 @@ public:
 	int16_t GetCycle() { return m_nCycle; }
 
 	bool isFrameComplete = false;
+	bool isThrowingInterrupt = false;
 
 private:
 	int16_t m_nScanline, m_nCycle;
