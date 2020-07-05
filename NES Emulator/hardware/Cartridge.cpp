@@ -6,7 +6,7 @@
 #include <sstream>
 
 Cartridge::Cartridge(const char* filename) :
-	m_pCHRMemory(nullptr), m_pPRGMemory(nullptr), m_pUsedMapper(nullptr)
+	m_pCHRMemory(nullptr), m_pPRGMemory(nullptr), UsedMapper(nullptr)
 {
 	Header header;
 
@@ -25,6 +25,7 @@ Cartridge::Cartridge(const char* filename) :
 		ifs.seekg(512, std::ios_base::cur);
 
 	m_uMapperID = ((header.MapperFlag1 & 0xF0) >> 4) | (header.MapperFlag2 & 0xF0);
+	UsedMirroring = (header.MapperFlag1 & 0x01) ? MIRROR_VERTICAL : MIRROR_HORIZONTAL;
 
 	// Read PRG memory
 	m_uPRGBanks = header.PRGsize;
@@ -38,10 +39,10 @@ Cartridge::Cartridge(const char* filename) :
 
 	switch (m_uMapperID)
 	{
-	case 0: m_pUsedMapper = new Mapper_000(m_uPRGBanks, m_uCHRBanks); break;
+	case 0: UsedMapper = new Mapper_000(m_uPRGBanks, m_uCHRBanks); break;
 	}
 
-	if (m_pUsedMapper == nullptr)
+	if (UsedMapper == nullptr)
 	{
 		std::stringstream ss;
 		ss << "This ROM uses a Mapper that this emulator doesn't (yet) support! Mapper ID is: " << (WORD)m_uMapperID;
@@ -63,7 +64,7 @@ Cartridge::~Cartridge()
 bool Cartridge::ReadCPU(WORD address, BYTE& value)
 {
 	WORD mappedAddress = 0;
-	if (m_pUsedMapper->MappedReadCPU(address, mappedAddress))
+	if (UsedMapper->MappedReadCPU(address, mappedAddress))
 	{
 		value = m_pPRGMemory[mappedAddress];
 		return true;
@@ -75,7 +76,7 @@ bool Cartridge::ReadCPU(WORD address, BYTE& value)
 bool Cartridge::WriteCPU(WORD address, BYTE value)
 {
 	WORD mappedAddress = 0;
-	if (m_pUsedMapper->MappedWriteCPU(address, mappedAddress))
+	if (UsedMapper->MappedWriteCPU(address, mappedAddress))
 	{
 		m_pPRGMemory[mappedAddress] = value;
 		return true;
@@ -87,7 +88,7 @@ bool Cartridge::WriteCPU(WORD address, BYTE value)
 bool Cartridge::ReadPPU(WORD address, BYTE& value)
 {
 	WORD mappedAddress = 0;
-	if (m_pUsedMapper->MappedReadPPU(address, mappedAddress))
+	if (UsedMapper->MappedReadPPU(address, mappedAddress))
 	{
 		value = m_pCHRMemory[mappedAddress];
 		return true;
@@ -99,7 +100,7 @@ bool Cartridge::ReadPPU(WORD address, BYTE& value)
 bool Cartridge::WritePPU(WORD address, BYTE value)
 {
 	WORD mappedAddress = 0;
-	if (m_pUsedMapper->MappedWritePPU(address, mappedAddress))
+	if (UsedMapper->MappedWritePPU(address, mappedAddress))
 	{
 		m_pCHRMemory[mappedAddress] = value;
 		return true;

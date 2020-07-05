@@ -227,7 +227,29 @@ BYTE RP2C02::ReadPPU(WORD address, bool readonly)
 	// Nametables
 	else if (IS_IN_RANGE(address, 0x2000, 0x3EFF))
 	{
-
+		address &= 0x0FFF;
+		if (m_pCartridge->UsedMirroring == MIRROR_VERTICAL)
+		{
+			if (IS_IN_RANGE(address, 0x0000, 0x03FF))	// Top left
+				data = m_pNameTables[0][address];
+			if (IS_IN_RANGE(address, 0x0400, 0x07FF))	// Top right
+				data = m_pNameTables[1][address];
+			if (IS_IN_RANGE(address, 0x0800, 0x0BFF))	// Bottom left
+				data = m_pNameTables[0][address & 0x03FF];
+			if (IS_IN_RANGE(address, 0x0C00, 0x0FFF))	// Bottom right
+				data = m_pNameTables[1][address & 0x03FF];
+		}
+		else if (m_pCartridge->UsedMirroring == MIRROR_HORIZONTAL)
+		{
+			if (IS_IN_RANGE(address, 0x0000, 0x03FF))	// Top left
+				data = m_pNameTables[0][address];
+			if (IS_IN_RANGE(address, 0x0400, 0x07FF))	// Top right
+				data = m_pNameTables[0][address & 0x03FF];
+			if (IS_IN_RANGE(address, 0x0800, 0x0BFF))	// Bottom left
+				data = m_pNameTables[1][address];
+			if (IS_IN_RANGE(address, 0x0C00, 0x0FFF))	// Bottom right
+				data = m_pNameTables[1][address & 0x03FF];
+		}
 	}
 
 	// Palette information
@@ -260,7 +282,29 @@ void RP2C02::WritePPU(WORD address, BYTE value)
 	// Nametables
 	else if (IS_IN_RANGE(address, 0x2000, 0x3EFF))
 	{
-
+		address &= 0x0FFF;
+		if (m_pCartridge->UsedMirroring == MIRROR_VERTICAL)
+		{
+			if (IS_IN_RANGE(address, 0x0000, 0x03FF))	// Top left
+				m_pNameTables[0][address] = value;
+			if (IS_IN_RANGE(address, 0x0400, 0x07FF))	// Top right
+				m_pNameTables[1][address] = value;
+			if (IS_IN_RANGE(address, 0x0800, 0x0BFF))	// Bottom left
+				m_pNameTables[0][address & 0x03FF] = value;
+			if (IS_IN_RANGE(address, 0x0C00, 0x0FFF))	// Bottom right
+				m_pNameTables[1][address & 0x03FF] = value;
+		}
+		else if (m_pCartridge->UsedMirroring == MIRROR_HORIZONTAL)
+		{
+			if (IS_IN_RANGE(address, 0x0000, 0x03FF))	// Top left
+				m_pNameTables[0][address] = value;
+			if (IS_IN_RANGE(address, 0x0400, 0x07FF))	// Top right
+				m_pNameTables[0][address & 0x03FF] = value;
+			if (IS_IN_RANGE(address, 0x0800, 0x0BFF))	// Bottom left
+				m_pNameTables[1][address] = value;
+			if (IS_IN_RANGE(address, 0x0C00, 0x0FFF))	// Bottom right
+				m_pNameTables[1][address & 0x03FF] = value;
+		}
 	}
 
 	// Palette information
