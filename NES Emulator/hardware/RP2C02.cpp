@@ -457,7 +457,7 @@ void RP2C02::Tick()
 			}
 		}
 
-		if (IS_IN_RANGE(m_nCycle, 280, 304))
+		if (m_nScanline == -1 && (m_nCycle, 280, 304))
 		{
 			if (m_oMask.ShowBackground)
 			{
@@ -491,20 +491,10 @@ void RP2C02::Tick()
 		BYTE palLo = (m_oBgShiftRegister.AttribLo & (0x8000 >> m_nFineX)) > 0;
 		BYTE palHi = (m_oBgShiftRegister.AttribHi & (0x8000 >> m_nFineX)) > 0;
 		backgroundAttrib = (palHi << 1) | palLo;
-
-		if (backgroundPixel != 0 && backgroundAttrib != 0)
-			volatile int i = 0;
 	}
 
 	// Render the pixel
-	// std::cout << "(" << m_nScanline << ", " << m_nCycle << "): (" << (WORD)backgroundAttrib << ", " << (WORD)backgroundPixel << ")" << std::endl;
-	if (m_nScanline == 100 && m_nCycle == 0)
-		volatile int i = 0; 
 	SDL_Color c = PatternPixelScreenColour(backgroundAttrib, backgroundPixel);
-	if (c.r != 0 && m_nScanline != -1)
-	{
-		volatile int i = 0;
-	}
 	SDL_SetRenderDrawColor(m_pRenderer, c.r, c.g, c.b, 255);
 	SDL_RenderDrawPoint(m_pRenderer, m_nCycle, m_nScanline);
 
