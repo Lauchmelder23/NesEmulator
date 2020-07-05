@@ -5,6 +5,9 @@
 #include <cstring>
 #include <sstream>
 
+#include "Mapper_000.hpp"
+#include "Mapper_001.hpp"
+
 Cartridge::Cartridge(const char* filename) :
 	m_pCHRMemory(nullptr), m_pPRGMemory(nullptr), UsedMapper(nullptr)
 {
@@ -40,6 +43,7 @@ Cartridge::Cartridge(const char* filename) :
 	switch (m_uMapperID)
 	{
 	case 0: UsedMapper = new Mapper_000(m_uPRGBanks, m_uCHRBanks); break;
+	case 1: UsedMapper = new Mapper_001(m_uPRGBanks, m_uCHRBanks); break;
 	}
 
 	if (UsedMapper == nullptr)

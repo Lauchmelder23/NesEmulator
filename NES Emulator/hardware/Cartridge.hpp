@@ -2,7 +2,7 @@
 
 #include "../util.hpp"
 
-#include "Mapper_000.hpp"
+#include "Mapper.hpp"
 
 #define MIRROR_VERTICAL 0x00
 #define MIRROR_HORIZONTAL 0x01
