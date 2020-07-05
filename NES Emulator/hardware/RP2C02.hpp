@@ -59,6 +59,38 @@ private:
 		BYTE Raw;
 	} m_oStatus;
 
+	// Internal register
+	union 
+	{
+		struct
+		{
+			WORD CoarseX : 5;
+			WORD CoarseY : 5;
+			WORD Nametable : 2;
+			WORD FineY : 3;
+			WORD Unused : 1;
+		};
+
+		WORD Raw = 0x0000;
+	} m_oVramRegister, m_oTempVramRegister;
+	BYTE m_nFineX = 0x00;
+
+	struct
+	{
+		BYTE ID = 0x00;
+		BYTE Attrib = 0x00;
+		BYTE LSB = 0x00;
+		BYTE MSB = 0x00;
+	} m_oBgNextTileInfo;
+
+	struct  
+	{
+		WORD PatternLo = 0x00;
+		WORD PatternHi = 0x00;
+		WORD AttribLo = 0x00;
+		WORD AttribHi = 0x00;
+	} m_oBgShiftRegister;
+
 public:
 	RP2C02();
 	~RP2C02();
@@ -110,5 +142,4 @@ private:
 
 	BYTE m_nAddressLatch = 0x00;
 	BYTE m_nPPUBuffer = 0x00;	// Data transfer is delayed by 1 cycle
-	WORD m_nPPUAddress = 0x0000;
 };
