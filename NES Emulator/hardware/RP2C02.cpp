@@ -76,7 +76,8 @@ RP2C02::RP2C02() :
 	m_pPalette[0x3E] = { 0, 0, 0 };
 	m_pPalette[0x3F] = { 0, 0, 0 };
 
-	m_pNameTables = new BYTE[2 * 1024];
+	m_pNameTables = new BYTE*[2]{ new BYTE[1024], new BYTE[1024] };
+
 	m_pPaletteTable = new BYTE[32];
 }
 
@@ -84,6 +85,12 @@ RP2C02::~RP2C02()
 {
 	delete[] m_pPaletteTable;
 	m_pPaletteTable = nullptr;
+
+	delete[] m_pNameTables[1];
+	m_pNameTables[1] = nullptr;
+
+	delete[] m_pNameTables[0];
+	m_pNameTables[0] = nullptr;
 
 	delete[] m_pNameTables;
 	m_pNameTables = nullptr;
