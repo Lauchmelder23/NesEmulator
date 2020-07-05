@@ -9,7 +9,7 @@ bool NESWindow::OnCreate()
 	{
 		m_pCartridge = new Cartridge(m_pFilename);
 	}
-	catch (const char* e)
+	catch (std::string e)
 	{
 		std::cerr << e << std::endl;
 		return false;

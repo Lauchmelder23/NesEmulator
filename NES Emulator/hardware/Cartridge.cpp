@@ -15,7 +15,7 @@ Cartridge::Cartridge(const char* filename) :
 	{
 		std::stringstream ss;
 		ss << "Failed to open file " << filename << ": " << std::strerror(errno);
-		throw ss.str().c_str();
+		throw ss.str();
 	}
 
 	ifs.read(reinterpret_cast<char*>(&header), sizeof(Header));	// Naughty
@@ -46,7 +46,7 @@ Cartridge::Cartridge(const char* filename) :
 	{
 		std::stringstream ss;
 		ss << "This ROM uses a Mapper that this emulator doesn't (yet) support! Mapper ID is: " << (WORD)m_uMapperID;
-		throw ss.str().c_str();
+		throw ss.str();
 	}
 
 	ifs.close();
