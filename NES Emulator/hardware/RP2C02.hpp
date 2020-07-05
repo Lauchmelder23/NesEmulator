@@ -76,7 +76,7 @@ public:
 
 	SDL_Color& PatternPixelScreenColour(BYTE paletteID, BYTE pixelValue);
 
-private:
+public:
 	Cartridge* m_pCartridge;	
 
 	// Connected stuff
