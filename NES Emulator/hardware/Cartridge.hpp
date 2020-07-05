@@ -2,7 +2,12 @@
 
 #include "../util.hpp"
 
-#include "Mapper_000.hpp"
+#include "Mapper.hpp"
+
+#define MIRROR_VERTICAL 0x00
+#define MIRROR_HORIZONTAL 0x01
+#define MIRROR_ONESCREEN 0x02
+#define MIRROR_FOURSCREEN 0x03
 
 class Cartridge
 {
@@ -25,6 +30,9 @@ public:
 	Cartridge(const char* filename);
 	~Cartridge();
 
+	Mapper* UsedMapper;
+	uint8_t UsedMirroring;
+
 private:
 	BYTE* m_pPRGMemory;
 	BYTE* m_pCHRMemory;
@@ -32,8 +40,6 @@ private:
 	uint8_t m_uMapperID;
 	uint8_t m_uPRGBanks;
 	uint8_t m_uCHRBanks;
-
-	Mapper* m_pUsedMapper;
 
 public:
 	bool ReadCPU(WORD address, BYTE& value);

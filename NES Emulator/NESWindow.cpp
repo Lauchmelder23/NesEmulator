@@ -9,7 +9,7 @@ bool NESWindow::OnCreate()
 	{
 		m_pCartridge = new Cartridge(m_pFilename);
 	}
-	catch (const char* e)
+	catch (std::string e)
 	{
 		std::cerr << e << std::endl;
 		return false;
@@ -90,6 +90,27 @@ bool NESWindow::OnUpdate(double frametime)
 
 void NESWindow::OnRender(SDL_Renderer* renderer)
 {
+	static SDL_Rect target;
+	static SDL_Rect src;
+	SDL_Texture* patterns = m_oNes.m_oPPU.GetPatternTable(1, m_nSelectedPalette);
+	target.w = 8;
+	target.h = 8;
+	src.w = 8;
+	src.h = 8;
+
+	for (int y = 0; y < 30; y++)
+	{
+		for (int x = 0; x < 32; x++)
+		{
+			BYTE val = m_oNes.m_oPPU.m_pNameTables[0][y * 32 + x];
+			target.x = x * 8;
+			target.y = y * 8;
+			src.x = ((val & 0x0F) << 3);
+			src.y = ((val >> 4) & 0x0F) << 3;
+			SDL_RenderCopy(m_pRenderer, patterns, &src, &target);
+		}
+	}
+
 	SDL_SetRenderTarget(renderer, NULL);
 
 	// Clear screen (is this necessary?)

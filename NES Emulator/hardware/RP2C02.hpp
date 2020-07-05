@@ -76,15 +76,13 @@ public:
 
 	SDL_Color& PatternPixelScreenColour(BYTE paletteID, BYTE pixelValue);
 
-private:
+public:
 	Cartridge* m_pCartridge;	
 
 	// Connected stuff
 
 	// 2x 1KB nametables
-	BYTE* m_pNameTables;
-
-	// 2x 4KB Pattern tables
+	BYTE** m_pNameTables;
 
 	// 32 Bytes of Palette info
 	BYTE* m_pPaletteTable;
