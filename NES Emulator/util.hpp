@@ -27,5 +27,5 @@ typedef uint16_t WORD;
 #ifdef WIN32
 	#define STRERROR(buf, len, err) strerror_s(buf, len, err)
 #else
-	#define STTERROR(buf, len, err) strerror_r(err, buf, len)
+	#define STRERROR(buf, len, err) strerror_r(err, buf, len)
 #endif	// WIN32
