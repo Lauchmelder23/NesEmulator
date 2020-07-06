@@ -18,7 +18,8 @@ Cartridge::Cartridge(const char* filename) :
 	{
 		std::stringstream ss;
 		char* buffer = new char[1024];	// Allocate 1024 characters for the error buffer
-		ss << "Failed to open file " << filename << ": " << strerror_s(buffer, 1024, errno);
+		STRERROR(buffer, 1024, errno);
+		ss << "Failed to open file " << filename << ": " << buffer;
 		throw ss.str();
 	}
 
