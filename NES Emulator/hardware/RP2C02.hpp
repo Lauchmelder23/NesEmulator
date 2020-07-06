@@ -123,10 +123,10 @@ public:
 private:
 	SDL_Renderer* m_pRenderer;
 
-	SDL_Color m_pPalette[0x40];
+	std::array<SDL_Color, 0x40> m_arrPalette;
 	SDL_Texture* m_pScreen;
-	SDL_Texture** m_pTexNameTables;
-	SDL_Texture** m_pTexPatternTables;
+	std::array<SDL_Texture*, 2> m_arrTexNameTables;
+	std::array<SDL_Texture*, 2> m_arrTexPatternTables;
 
 public:
 	SDL_Texture* GetScreen();

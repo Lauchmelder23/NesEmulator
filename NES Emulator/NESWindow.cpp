@@ -17,7 +17,9 @@ bool NESWindow::OnCreate()
 
 	m_oNes.InsertCartridge(m_pCartridge);
 
+#ifdef PRINT_INSTRUCTIONS
 	m_mapDisassemble = m_oNes.m_oCPU.Disassemble(0x0000, 0xFFFF);
+#endif
 
 #ifdef LOG_INSTRUCTIONS
 	file.open("dump.log");
