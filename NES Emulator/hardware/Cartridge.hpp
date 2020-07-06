@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 
 #include "../util.hpp"
 
@@ -28,14 +29,15 @@ public:
 
 public:
 	Cartridge(const char* filename);
-	~Cartridge();
+	~Cartridge() = default;
 
-	Mapper* UsedMapper;
 	uint8_t UsedMirroring;
 
 private:
-	BYTE* m_pPRGMemory;
-	BYTE* m_pCHRMemory;
+	std::vector<BYTE> m_vecPRGMemory;
+	std::vector<BYTE> m_vecCHRMemory;
+
+	std::unique_ptr<Mapper> m_pUsedMapper;
 
 	uint8_t m_uMapperID;
 	uint8_t m_uPRGBanks;

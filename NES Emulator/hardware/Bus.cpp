@@ -57,7 +57,7 @@ BYTE Bus::ReadCPU(WORD address, bool readOnly /*= false*/)
 	return data;
 }
 
-void Bus::InsertCartridge(Cartridge* cartridge)
+void Bus::InsertCartridge(const std::shared_ptr<Cartridge>& cartridge)
 {
 	m_pCartridge = cartridge;
 	m_oPPU.InsertCartridge(cartridge);

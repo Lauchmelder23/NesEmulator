@@ -7,7 +7,7 @@ bool NESWindow::OnCreate()
 {
 	try 
 	{
-		m_pCartridge = new Cartridge(m_pFilename);
+		m_pCartridge = std::make_shared<Cartridge>(m_pFilename);
 	}
 	catch (std::string e)
 	{
@@ -17,7 +17,9 @@ bool NESWindow::OnCreate()
 
 	m_oNes.InsertCartridge(m_pCartridge);
 
+#ifdef PRINT_INSTRUCTIONS
 	m_mapDisassemble = m_oNes.m_oCPU.Disassemble(0x0000, 0xFFFF);
+#endif
 
 #ifdef LOG_INSTRUCTIONS
 	file.open("dump.log");

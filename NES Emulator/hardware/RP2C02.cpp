@@ -4,107 +4,88 @@
 #include <iostream>
 
 RP2C02::RP2C02() :
-	m_pCartridge(nullptr), m_pNameTables(nullptr), m_pPaletteTable(nullptr), m_nScanline(0), m_nCycle(0),
-	m_pTexNameTables(new SDL_Texture*[2] { nullptr, nullptr }), 
-	m_pTexPatternTables(new SDL_Texture* [2]{ nullptr, nullptr })
+	m_pCartridge(nullptr), m_nScanline(0), m_nCycle(0),
+	m_oControl{}, m_oMask{}, m_oStatus{}, m_pRenderer(nullptr), m_pScreen(nullptr),
+	m_arrTexNameTables{ nullptr, nullptr }, 
+	m_arrTexPatternTables{ nullptr, nullptr }
 {
-	m_pPalette[0x00] = {84, 84, 84};
-	m_pPalette[0x01] = {0, 30, 116};
-	m_pPalette[0x02] = {8, 16, 144};
-	m_pPalette[0x03] = {48, 0, 136};
-	m_pPalette[0x04] = {68, 0, 100};
-	m_pPalette[0x05] = {92, 0, 48};
-	m_pPalette[0x06] = {84, 4, 0};
-	m_pPalette[0x07] = {60, 24, 0};
-	m_pPalette[0x08] = {32, 42, 0};
-	m_pPalette[0x09] = {8, 58, 0};
-	m_pPalette[0x0A] = {0, 64, 0};
-	m_pPalette[0x0B] = {0, 60, 0};
-	m_pPalette[0x0C] = {0, 50, 60};
-	m_pPalette[0x0D] = {0, 0, 0},
-	m_pPalette[0x0E] = {0, 0, 0},
-	m_pPalette[0x0F] = {0, 0, 0},
+	m_arrPalette[0x00] = {84, 84, 84};
+	m_arrPalette[0x01] = {0, 30, 116};
+	m_arrPalette[0x02] = {8, 16, 144};
+	m_arrPalette[0x03] = {48, 0, 136};
+	m_arrPalette[0x04] = {68, 0, 100};
+	m_arrPalette[0x05] = {92, 0, 48};
+	m_arrPalette[0x06] = {84, 4, 0};
+	m_arrPalette[0x07] = {60, 24, 0};
+	m_arrPalette[0x08] = {32, 42, 0};
+	m_arrPalette[0x09] = {8, 58, 0};
+	m_arrPalette[0x0A] = {0, 64, 0};
+	m_arrPalette[0x0B] = {0, 60, 0};
+	m_arrPalette[0x0C] = {0, 50, 60};
+	m_arrPalette[0x0D] = {0, 0, 0},
+	m_arrPalette[0x0E] = {0, 0, 0},
+	m_arrPalette[0x0F] = {0, 0, 0},
 
-	m_pPalette[0x10] = { 152, 150, 152 };
-	m_pPalette[0x11] = { 8, 76, 196 };
-	m_pPalette[0x12] = { 48, 50, 236 };
-	m_pPalette[0x13] = { 92, 30, 228 };
-	m_pPalette[0x14] = { 136, 20, 176 };
-	m_pPalette[0x15] = { 160, 20, 100 };
-	m_pPalette[0x16] = { 152, 34, 32 };
-	m_pPalette[0x17] = { 120, 60, 0 };
-	m_pPalette[0x18] = { 84, 90, 0 };
-	m_pPalette[0x19] = { 40, 114, 0 };
-	m_pPalette[0x1A] = { 8, 124, 0 };
-	m_pPalette[0x1B] = { 0, 118, 40 };
-	m_pPalette[0x1C] = { 0, 102, 120 };
-	m_pPalette[0x1D] = { 0, 0, 0 },
-	m_pPalette[0x1E] = { 0, 0, 0 },
-	m_pPalette[0x1F] = { 0, 0, 0 },
+	m_arrPalette[0x10] = { 152, 150, 152 };
+	m_arrPalette[0x11] = { 8, 76, 196 };
+	m_arrPalette[0x12] = { 48, 50, 236 };
+	m_arrPalette[0x13] = { 92, 30, 228 };
+	m_arrPalette[0x14] = { 136, 20, 176 };
+	m_arrPalette[0x15] = { 160, 20, 100 };
+	m_arrPalette[0x16] = { 152, 34, 32 };
+	m_arrPalette[0x17] = { 120, 60, 0 };
+	m_arrPalette[0x18] = { 84, 90, 0 };
+	m_arrPalette[0x19] = { 40, 114, 0 };
+	m_arrPalette[0x1A] = { 8, 124, 0 };
+	m_arrPalette[0x1B] = { 0, 118, 40 };
+	m_arrPalette[0x1C] = { 0, 102, 120 };
+	m_arrPalette[0x1D] = { 0, 0, 0 },
+	m_arrPalette[0x1E] = { 0, 0, 0 },
+	m_arrPalette[0x1F] = { 0, 0, 0 },
 
 
-	m_pPalette[0x20] = { 236, 238, 236 };
-	m_pPalette[0x21] = { 76, 154, 236 };
-	m_pPalette[0x22] = { 120, 124, 236 };
-	m_pPalette[0x23] = { 176, 98, 236 };
-	m_pPalette[0x24] = { 228, 84, 236 };
-	m_pPalette[0x25] = { 236, 88, 180 };
-	m_pPalette[0x26] = { 236, 106, 100 };
-	m_pPalette[0x27] = { 212, 136, 32 };
-	m_pPalette[0x28] = { 160, 170, 0 };
-	m_pPalette[0x29] = { 116, 196, 0 };
-	m_pPalette[0x2A] = { 76, 208, 32 };
-	m_pPalette[0x2B] = { 56, 204, 108 };
-	m_pPalette[0x2C] = { 56, 180, 204 };
-	m_pPalette[0x2D] = { 60, 60, 60 },
-	m_pPalette[0x2E] = { 0, 0, 0 },
-	m_pPalette[0x2F] = { 0, 0,60 },
+	m_arrPalette[0x20] = { 236, 238, 236 };
+	m_arrPalette[0x21] = { 76, 154, 236 };
+	m_arrPalette[0x22] = { 120, 124, 236 };
+	m_arrPalette[0x23] = { 176, 98, 236 };
+	m_arrPalette[0x24] = { 228, 84, 236 };
+	m_arrPalette[0x25] = { 236, 88, 180 };
+	m_arrPalette[0x26] = { 236, 106, 100 };
+	m_arrPalette[0x27] = { 212, 136, 32 };
+	m_arrPalette[0x28] = { 160, 170, 0 };
+	m_arrPalette[0x29] = { 116, 196, 0 };
+	m_arrPalette[0x2A] = { 76, 208, 32 };
+	m_arrPalette[0x2B] = { 56, 204, 108 };
+	m_arrPalette[0x2C] = { 56, 180, 204 };
+	m_arrPalette[0x2D] = { 60, 60, 60 },
+	m_arrPalette[0x2E] = { 0, 0, 0 },
+	m_arrPalette[0x2F] = { 0, 0,60 },
 
-	m_pPalette[0x30] = { 236, 238, 236 };
-	m_pPalette[0x31] = { 168, 204, 236 };
-	m_pPalette[0x32] = { 188, 188, 236 };
-	m_pPalette[0x33] = { 212, 178, 236 };
-	m_pPalette[0x34] = { 236, 174, 236 };
-	m_pPalette[0x35] = { 236, 174, 212 };
-	m_pPalette[0x36] = { 236, 180, 176 };
-	m_pPalette[0x37] = { 228, 196, 144 };
-	m_pPalette[0x38] = { 204, 210, 120 };
-	m_pPalette[0x39] = { 180, 222, 120 };
-	m_pPalette[0x3A] = { 168, 226, 144 };
-	m_pPalette[0x3B] = { 152, 226, 180 };
-	m_pPalette[0x3C] = { 160, 214, 228 };
-	m_pPalette[0x3D] = { 160, 162, 160 };
-	m_pPalette[0x3E] = { 0, 0, 0 };
-	m_pPalette[0x3F] = { 0, 0, 0 };
-
-	m_pNameTables = new BYTE*[2]{ new BYTE[1024], new BYTE[1024] };
-
-	m_pPaletteTable = new BYTE[32];
+	m_arrPalette[0x30] = { 236, 238, 236 };
+	m_arrPalette[0x31] = { 168, 204, 236 };
+	m_arrPalette[0x32] = { 188, 188, 236 };
+	m_arrPalette[0x33] = { 212, 178, 236 };
+	m_arrPalette[0x34] = { 236, 174, 236 };
+	m_arrPalette[0x35] = { 236, 174, 212 };
+	m_arrPalette[0x36] = { 236, 180, 176 };
+	m_arrPalette[0x37] = { 228, 196, 144 };
+	m_arrPalette[0x38] = { 204, 210, 120 };
+	m_arrPalette[0x39] = { 180, 222, 120 };
+	m_arrPalette[0x3A] = { 168, 226, 144 };
+	m_arrPalette[0x3B] = { 152, 226, 180 };
+	m_arrPalette[0x3C] = { 160, 214, 228 };
+	m_arrPalette[0x3D] = { 160, 162, 160 };
+	m_arrPalette[0x3E] = { 0, 0, 0 };
+	m_arrPalette[0x3F] = { 0, 0, 0 };
 }
 
 RP2C02::~RP2C02()
 {
-	delete[] m_pPaletteTable;
-	m_pPaletteTable = nullptr;
+	SDL_DestroyTexture(m_arrTexPatternTables[0]);
+	SDL_DestroyTexture(m_arrTexPatternTables[1]);
 
-	delete[] m_pNameTables[1];
-	m_pNameTables[1] = nullptr;
-
-	delete[] m_pNameTables[0];
-	m_pNameTables[0] = nullptr;
-
-	delete[] m_pNameTables;
-	m_pNameTables = nullptr;
-
-	SDL_DestroyTexture(m_pTexPatternTables[0]);
-	SDL_DestroyTexture(m_pTexPatternTables[1]);
-	delete[] m_pTexPatternTables;
-	m_pTexPatternTables = nullptr;
-
-	SDL_DestroyTexture(m_pTexNameTables[0]);
-	SDL_DestroyTexture(m_pTexNameTables[1]);
-	delete[] m_pTexNameTables;
-	m_pTexNameTables = nullptr;
+	SDL_DestroyTexture(m_arrTexNameTables[0]);
+	SDL_DestroyTexture(m_arrTexNameTables[1]);
 
 	SDL_DestroyTexture(m_pScreen);
 }
@@ -115,12 +96,12 @@ void RP2C02::Initialize(SDL_Renderer* renderer)
 
 	m_pScreen = SDL_CreateTexture(m_pRenderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_TARGET, 256, 240);
 
-	m_pTexNameTables = new SDL_Texture * [2]{
+	m_arrTexNameTables = {
 		SDL_CreateTexture(m_pRenderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_TARGET, 256, 240),
 		SDL_CreateTexture(m_pRenderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_TARGET, 256, 240)
 	};
 
-	m_pTexPatternTables = new SDL_Texture * [2]{
+	m_arrTexPatternTables = {
 		SDL_CreateTexture(m_pRenderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_TARGET, 128, 128),
 		SDL_CreateTexture(m_pRenderer, SDL_PIXELFORMAT_RGB888, SDL_TEXTUREACCESS_TARGET, 128, 128)
 	};
@@ -243,9 +224,9 @@ BYTE RP2C02::ReadPPU(WORD address, bool readonly)
 		if (m_pCartridge->UsedMirroring == MIRROR_VERTICAL)
 		{
 			if (IS_IN_RANGE(address, 0x0000, 0x03FF))	// Top left
-				data = m_pNameTables[0][address];
+				data = m_pNameTables[0][address & 0x03FF];
 			if (IS_IN_RANGE(address, 0x0400, 0x07FF))	// Top right
-				data = m_pNameTables[1][address];
+				data = m_pNameTables[1][address & 0x03FF];
 			if (IS_IN_RANGE(address, 0x0800, 0x0BFF))	// Bottom left
 				data = m_pNameTables[0][address & 0x03FF];
 			if (IS_IN_RANGE(address, 0x0C00, 0x0FFF))	// Bottom right
@@ -254,11 +235,11 @@ BYTE RP2C02::ReadPPU(WORD address, bool readonly)
 		else if (m_pCartridge->UsedMirroring == MIRROR_HORIZONTAL)
 		{
 			if (IS_IN_RANGE(address, 0x0000, 0x03FF))	// Top left
-				data = m_pNameTables[0][address];
+				data = m_pNameTables[0][address & 0x03FF];
 			if (IS_IN_RANGE(address, 0x0400, 0x07FF))	// Top right
 				data = m_pNameTables[0][address & 0x03FF];
 			if (IS_IN_RANGE(address, 0x0800, 0x0BFF))	// Bottom left
-				data = m_pNameTables[1][address];
+				data = m_pNameTables[1][address & 0x03FF];
 			if (IS_IN_RANGE(address, 0x0C00, 0x0FFF))	// Bottom right
 				data = m_pNameTables[1][address & 0x03FF];
 		}
@@ -297,9 +278,9 @@ void RP2C02::WritePPU(WORD address, BYTE value)
 		if (m_pCartridge->UsedMirroring == MIRROR_VERTICAL)
 		{
 			if (IS_IN_RANGE(address, 0x0000, 0x03FF))	// Top left
-				m_pNameTables[0][address] = value;
+				m_pNameTables[0][address & 0x03FF] = value;
 			if (IS_IN_RANGE(address, 0x0400, 0x07FF))	// Top right
-				m_pNameTables[1][address] = value;
+				m_pNameTables[1][address & 0x03FF] = value;
 			if (IS_IN_RANGE(address, 0x0800, 0x0BFF))	// Bottom left
 				m_pNameTables[0][address & 0x03FF] = value;
 			if (IS_IN_RANGE(address, 0x0C00, 0x0FFF))	// Bottom right
@@ -308,11 +289,11 @@ void RP2C02::WritePPU(WORD address, BYTE value)
 		else if (m_pCartridge->UsedMirroring == MIRROR_HORIZONTAL)
 		{
 			if (IS_IN_RANGE(address, 0x0000, 0x03FF))	// Top left
-				m_pNameTables[0][address] = value;
+				m_pNameTables[0][address & 0x03FF] = value;
 			if (IS_IN_RANGE(address, 0x0400, 0x07FF))	// Top right
 				m_pNameTables[0][address & 0x03FF] = value;
 			if (IS_IN_RANGE(address, 0x0800, 0x0BFF))	// Bottom left
-				m_pNameTables[1][address] = value;
+				m_pNameTables[1][address & 0x03FF] = value;
 			if (IS_IN_RANGE(address, 0x0C00, 0x0FFF))	// Bottom right
 				m_pNameTables[1][address & 0x03FF] = value;
 		}
@@ -333,7 +314,7 @@ void RP2C02::WritePPU(WORD address, BYTE value)
 	}
 }
 
-void RP2C02::InsertCartridge(Cartridge* cartridge)
+void RP2C02::InsertCartridge(const std::shared_ptr<Cartridge>& cartridge)
 {
 	m_pCartridge = cartridge;
 }
@@ -457,7 +438,7 @@ void RP2C02::Tick()
 			}
 		}
 
-		if (m_nScanline == -1 && (m_nCycle, 280, 304))
+		if (m_nScanline == -1 && IS_IN_RANGE(m_nCycle, 280, 304))
 		{
 			if (m_oMask.ShowBackground)
 			{
@@ -517,7 +498,7 @@ void RP2C02::Tick()
 
 SDL_Color& RP2C02::PatternPixelScreenColour(BYTE paletteID, BYTE pixelValue)
 {
-	return m_pPalette[ReadPPU(0x3F00 + (paletteID << 2) + pixelValue)];
+	return m_arrPalette[ReadPPU(0x3F00 + (paletteID << 2) + pixelValue) & 0x3F];
 }
 
 SDL_Texture* RP2C02::GetScreen()
@@ -527,13 +508,13 @@ SDL_Texture* RP2C02::GetScreen()
 
 SDL_Texture* RP2C02::GetNameTable(BYTE i)
 {
-	return m_pTexNameTables[i];
+	return m_arrTexNameTables[i];
 }
 
 SDL_Texture* RP2C02::GetPatternTable(BYTE i, BYTE palette)
 {
 	SDL_Texture* prevRenderTarget = SDL_GetRenderTarget(m_pRenderer);
-	SDL_SetRenderTarget(m_pRenderer, m_pTexPatternTables[i]);
+	SDL_SetRenderTarget(m_pRenderer, m_arrTexPatternTables[i]);
 
 	// A pattern table is 16x16 "tiles"
 	for (BYTE tileY = 0; tileY < 16; tileY++)
@@ -566,5 +547,5 @@ SDL_Texture* RP2C02::GetPatternTable(BYTE i, BYTE palette)
 	}
 
 	SDL_SetRenderTarget(m_pRenderer, prevRenderTarget);
-	return m_pTexPatternTables[i];
+	return m_arrTexPatternTables[i];
 }

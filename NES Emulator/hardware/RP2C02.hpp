@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <SDL.h>
 
 #include "../util.hpp"
@@ -11,7 +12,7 @@ class RP2C02
 private:
 	// The sacred registers!
 	// CONTROL
-	union 
+	union m_sControl
 	{
 		struct 
 		{
@@ -28,7 +29,7 @@ private:
 	} m_oControl;
 
 	// MASK
-	union 
+	union m_sMask
 	{
 		struct
 		{
@@ -46,7 +47,7 @@ private:
 	} m_oMask;
 
 	// STATUS
-	union 
+	union m_sStatus
 	{
 		struct 
 		{
@@ -60,7 +61,7 @@ private:
 	} m_oStatus;
 
 	// Internal register
-	union 
+	union m_sRegister
 	{
 		struct
 		{
@@ -75,7 +76,7 @@ private:
 	} m_oVramRegister, m_oTempVramRegister;
 	BYTE m_nFineX = 0x00;
 
-	struct
+	struct m_sNextTileInfo
 	{
 		BYTE ID = 0x00;
 		BYTE Attrib = 0x00;
@@ -83,7 +84,7 @@ private:
 		BYTE MSB = 0x00;
 	} m_oBgNextTileInfo;
 
-	struct  
+	struct m_sShiftRegister
 	{
 		WORD PatternLo = 0x00;
 		WORD PatternHi = 0x00;
@@ -103,29 +104,29 @@ public:
 	BYTE ReadPPU(WORD address, bool readonly = true);
 	void WritePPU(WORD address, BYTE value);
 
-	void InsertCartridge(Cartridge* cartridge);
+	void InsertCartridge(const std::shared_ptr<Cartridge>& cartridge);
 	void Tick();
 
 	SDL_Color& PatternPixelScreenColour(BYTE paletteID, BYTE pixelValue);
 
 public:
-	Cartridge* m_pCartridge;	
+	std::shared_ptr<Cartridge> m_pCartridge;	
 
 	// Connected stuff
 
 	// 2x 1KB nametables
-	BYTE** m_pNameTables;
+	std::array<std::array<BYTE, 1024>, 2> m_pNameTables;
 
 	// 32 Bytes of Palette info
-	BYTE* m_pPaletteTable;
+	std::array<BYTE, 32> m_pPaletteTable;
 
 private:
 	SDL_Renderer* m_pRenderer;
 
-	SDL_Color m_pPalette[0x40];
+	std::array<SDL_Color, 0x40> m_arrPalette;
 	SDL_Texture* m_pScreen;
-	SDL_Texture** m_pTexNameTables;
-	SDL_Texture** m_pTexPatternTables;
+	std::array<SDL_Texture*, 2> m_arrTexNameTables;
+	std::array<SDL_Texture*, 2> m_arrTexPatternTables;
 
 public:
 	SDL_Texture* GetScreen();

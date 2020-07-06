@@ -1297,7 +1297,7 @@ bool Mos6502::Execute()
 		Fetch();
 		WORD result = (m_uFetched << 1);
 		result |= m_oStatus.Flag.Carry;	// Set bit 0 to carry
-		Write(m_uFetchedFrom, result);
+		Write(m_uFetchedFrom, result & 0xFF);
 
 		m_oStatus.Flag.Carry = BIT_(8, result);
 		m_oStatus.Flag.Zero = ((result & 0x00FF) == 0);
@@ -1314,7 +1314,7 @@ bool Mos6502::Execute()
 		WORD result = (m_oStatus.Flag.Carry << 7);
 		result |= (m_uFetched >> 1);
 		m_oStatus.Flag.Carry = BIT_(0, m_uFetched);
-		Write(m_uFetchedFrom, result);
+		Write(m_uFetchedFrom, result & 0xFF);
 
 		WORD addition = m_uAcc + result + m_oStatus.Flag.Carry;
 
@@ -1384,7 +1384,7 @@ bool Mos6502::Execute()
 	{
 		Fetch();
 		WORD result = (WORD)m_uFetched >> 1;
-		Write(m_uFetchedFrom, result);
+		Write(m_uFetchedFrom, result & 0xFF);
 
 		m_uAcc = m_uAcc ^ result;
 
