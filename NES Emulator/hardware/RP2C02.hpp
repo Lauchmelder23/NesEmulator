@@ -11,7 +11,7 @@ class RP2C02
 private:
 	// The sacred registers!
 	// CONTROL
-	union 
+	union m_sControl
 	{
 		struct 
 		{
@@ -28,7 +28,7 @@ private:
 	} m_oControl;
 
 	// MASK
-	union 
+	union m_sMask
 	{
 		struct
 		{
@@ -46,7 +46,7 @@ private:
 	} m_oMask;
 
 	// STATUS
-	union 
+	union m_sStatus
 	{
 		struct 
 		{
@@ -60,7 +60,7 @@ private:
 	} m_oStatus;
 
 	// Internal register
-	union 
+	union m_sRegister
 	{
 		struct
 		{
@@ -75,7 +75,7 @@ private:
 	} m_oVramRegister, m_oTempVramRegister;
 	BYTE m_nFineX = 0x00;
 
-	struct
+	struct m_sNextTileInfo
 	{
 		BYTE ID = 0x00;
 		BYTE Attrib = 0x00;
@@ -83,7 +83,7 @@ private:
 		BYTE MSB = 0x00;
 	} m_oBgNextTileInfo;
 
-	struct  
+	struct  m_sShiftRegister
 	{
 		WORD PatternLo = 0x00;
 		WORD PatternHi = 0x00;

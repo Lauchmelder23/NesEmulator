@@ -5,6 +5,8 @@
 
 RP2C02::RP2C02() :
 	m_pCartridge(nullptr), m_pNameTables(nullptr), m_pPaletteTable(nullptr), m_nScanline(0), m_nCycle(0),
+	/* This crashes the program: m_oControl{}, */
+	m_oMask{}, m_oStatus{}, m_pRenderer(nullptr), m_pScreen(nullptr),
 	m_pTexNameTables(new SDL_Texture*[2] { nullptr, nullptr }), 
 	m_pTexPatternTables(new SDL_Texture* [2]{ nullptr, nullptr })
 {
@@ -457,7 +459,7 @@ void RP2C02::Tick()
 			}
 		}
 
-		if (m_nScanline == -1 && (m_nCycle, 280, 304))
+		if (m_nScanline == -1 && IS_IN_RANGE(m_nCycle, 280, 304))
 		{
 			if (m_oMask.ShowBackground)
 			{
