@@ -3,6 +3,7 @@
 #include <SDL.h>
 #include <SDLF.hpp>
 #include <sstream>
+#include <memory>
 
 #include "../editme.hpp"
 

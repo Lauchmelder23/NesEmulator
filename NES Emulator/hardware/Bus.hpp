@@ -1,5 +1,6 @@
 #pragma once
 #include <array>
+#include <memory>
 
 #include "../util.hpp" 
 #include "Mos6502.hpp"

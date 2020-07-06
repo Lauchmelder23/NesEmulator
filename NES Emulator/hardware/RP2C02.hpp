@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <memory>
 #include <SDL.h>
 
 #include "../util.hpp"
