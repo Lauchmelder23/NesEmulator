@@ -2,14 +2,14 @@
 
 #include <iostream>
 #include <fstream>
-#include <cstring>
+#include <string.h>
 #include <sstream>
 
 #include "Mapper_000.hpp"
 #include "Mapper_001.hpp"
 
 Cartridge::Cartridge(const char* filename) :
-	m_pCHRMemory(nullptr), m_pPRGMemory(nullptr), UsedMapper(nullptr)
+	m_vecCHRMemory{}, m_vecPRGMemory{}, m_pUsedMapper(nullptr)
 {
 	Header header;
 
@@ -17,7 +17,8 @@ Cartridge::Cartridge(const char* filename) :
 	if (!ifs.is_open())
 	{
 		std::stringstream ss;
-		ss << "Failed to open file " << filename << ": " << std::strerror(errno);
+		char* buffer = new char[1024];	// Allocate 1024 characters for the error buffer
+		ss << "Failed to open file " << filename << ": " << strerror_s(buffer, 1024, errno);
 		throw ss.str();
 	}
 
@@ -32,21 +33,21 @@ Cartridge::Cartridge(const char* filename) :
 
 	// Read PRG memory
 	m_uPRGBanks = header.PRGsize;
-	m_pPRGMemory = new BYTE[0x4000 * (uint64_t)m_uPRGBanks];
-	ifs.read(reinterpret_cast<char*>(m_pPRGMemory), 0x4000 * (uint64_t)m_uPRGBanks);
+	m_vecPRGMemory.resize(0x4000 * (uint64_t)m_uPRGBanks);
+	ifs.read(reinterpret_cast<char*>(m_vecPRGMemory.data()), 0x4000 * (uint64_t)m_uPRGBanks);
 
 	// Read CHR memory
 	m_uCHRBanks = header.CHRsize;
-	m_pCHRMemory = new BYTE[0x2000 * (uint64_t)m_uCHRBanks];
-	ifs.read(reinterpret_cast<char*>(m_pCHRMemory), 0x2000 * (uint64_t)m_uCHRBanks);
+	m_vecCHRMemory.resize(0x2000 * (uint64_t)m_uCHRBanks);
+	ifs.read(reinterpret_cast<char*>(m_vecCHRMemory.data()), 0x2000 * (uint64_t)m_uCHRBanks);
 
 	switch (m_uMapperID)
 	{
-	case 0: UsedMapper = new Mapper_000(m_uPRGBanks, m_uCHRBanks); break;
-	case 1: UsedMapper = new Mapper_001(m_uPRGBanks, m_uCHRBanks); break;
+	case 0: m_pUsedMapper = std::make_unique<Mapper_000>(m_uPRGBanks, m_uCHRBanks); break;
+	case 1: m_pUsedMapper = std::make_unique<Mapper_001>(m_uPRGBanks, m_uCHRBanks); break;
 	}
 
-	if (UsedMapper == nullptr)
+	if (m_pUsedMapper == nullptr)
 	{
 		std::stringstream ss;
 		ss << "This ROM uses a Mapper that this emulator doesn't (yet) support! Mapper ID is: " << (WORD)m_uMapperID;
@@ -56,21 +57,12 @@ Cartridge::Cartridge(const char* filename) :
 	ifs.close();
 }
 
-Cartridge::~Cartridge()
-{
-	delete[] m_pCHRMemory;
-	m_pCHRMemory = nullptr;
-
-	delete[] m_pPRGMemory;
-	m_pPRGMemory = nullptr;
-}
-
 bool Cartridge::ReadCPU(WORD address, BYTE& value)
 {
 	WORD mappedAddress = 0;
-	if (UsedMapper->MappedReadCPU(address, mappedAddress))
+	if (m_pUsedMapper->MappedReadCPU(address, mappedAddress))
 	{
-		value = m_pPRGMemory[mappedAddress];
+		value = m_vecPRGMemory[mappedAddress];
 		return true;
 	}
 
@@ -80,9 +72,9 @@ bool Cartridge::ReadCPU(WORD address, BYTE& value)
 bool Cartridge::WriteCPU(WORD address, BYTE value)
 {
 	WORD mappedAddress = 0;
-	if (UsedMapper->MappedWriteCPU(address, mappedAddress))
+	if (m_pUsedMapper->MappedWriteCPU(address, mappedAddress))
 	{
-		m_pPRGMemory[mappedAddress] = value;
+		m_vecPRGMemory[mappedAddress] = value;
 		return true;
 	}
 
@@ -92,9 +84,9 @@ bool Cartridge::WriteCPU(WORD address, BYTE value)
 bool Cartridge::ReadPPU(WORD address, BYTE& value)
 {
 	WORD mappedAddress = 0;
-	if (UsedMapper->MappedReadPPU(address, mappedAddress))
+	if (m_pUsedMapper->MappedReadPPU(address, mappedAddress))
 	{
-		value = m_pCHRMemory[mappedAddress];
+		value = m_vecCHRMemory[mappedAddress];
 		return true;
 	}
 
@@ -104,9 +96,9 @@ bool Cartridge::ReadPPU(WORD address, BYTE& value)
 bool Cartridge::WritePPU(WORD address, BYTE value)
 {
 	WORD mappedAddress = 0;
-	if (UsedMapper->MappedWritePPU(address, mappedAddress))
+	if (m_pUsedMapper->MappedWritePPU(address, mappedAddress))
 	{
-		m_pCHRMemory[mappedAddress] = value;
+		m_vecCHRMemory[mappedAddress] = value;
 		return true;
 	}
 

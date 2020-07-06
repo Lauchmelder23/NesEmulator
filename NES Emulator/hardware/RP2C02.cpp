@@ -4,9 +4,8 @@
 #include <iostream>
 
 RP2C02::RP2C02() :
-	m_pCartridge(nullptr), m_pNameTables(nullptr), m_pPaletteTable(nullptr), m_nScanline(0), m_nCycle(0),
-	/* This crashes the program: m_oControl{}, */
-	m_oMask{}, m_oStatus{}, m_pRenderer(nullptr), m_pScreen(nullptr),
+	m_pCartridge(nullptr), m_nScanline(0), m_nCycle(0),
+	m_oControl{}, m_oMask{}, m_oStatus{}, m_pRenderer(nullptr), m_pScreen(nullptr),
 	m_pTexNameTables(new SDL_Texture*[2] { nullptr, nullptr }), 
 	m_pTexPatternTables(new SDL_Texture* [2]{ nullptr, nullptr })
 {
@@ -78,26 +77,10 @@ RP2C02::RP2C02() :
 	m_pPalette[0x3D] = { 160, 162, 160 };
 	m_pPalette[0x3E] = { 0, 0, 0 };
 	m_pPalette[0x3F] = { 0, 0, 0 };
-
-	m_pNameTables = new BYTE*[2]{ new BYTE[1024], new BYTE[1024] };
-
-	m_pPaletteTable = new BYTE[32];
 }
 
 RP2C02::~RP2C02()
 {
-	delete[] m_pPaletteTable;
-	m_pPaletteTable = nullptr;
-
-	delete[] m_pNameTables[1];
-	m_pNameTables[1] = nullptr;
-
-	delete[] m_pNameTables[0];
-	m_pNameTables[0] = nullptr;
-
-	delete[] m_pNameTables;
-	m_pNameTables = nullptr;
-
 	SDL_DestroyTexture(m_pTexPatternTables[0]);
 	SDL_DestroyTexture(m_pTexPatternTables[1]);
 	delete[] m_pTexPatternTables;
@@ -245,9 +228,9 @@ BYTE RP2C02::ReadPPU(WORD address, bool readonly)
 		if (m_pCartridge->UsedMirroring == MIRROR_VERTICAL)
 		{
 			if (IS_IN_RANGE(address, 0x0000, 0x03FF))	// Top left
-				data = m_pNameTables[0][address];
+				data = m_pNameTables[0][address & 0x03FF];
 			if (IS_IN_RANGE(address, 0x0400, 0x07FF))	// Top right
-				data = m_pNameTables[1][address];
+				data = m_pNameTables[1][address & 0x03FF];
 			if (IS_IN_RANGE(address, 0x0800, 0x0BFF))	// Bottom left
 				data = m_pNameTables[0][address & 0x03FF];
 			if (IS_IN_RANGE(address, 0x0C00, 0x0FFF))	// Bottom right
@@ -256,11 +239,11 @@ BYTE RP2C02::ReadPPU(WORD address, bool readonly)
 		else if (m_pCartridge->UsedMirroring == MIRROR_HORIZONTAL)
 		{
 			if (IS_IN_RANGE(address, 0x0000, 0x03FF))	// Top left
-				data = m_pNameTables[0][address];
+				data = m_pNameTables[0][address & 0x03FF];
 			if (IS_IN_RANGE(address, 0x0400, 0x07FF))	// Top right
 				data = m_pNameTables[0][address & 0x03FF];
 			if (IS_IN_RANGE(address, 0x0800, 0x0BFF))	// Bottom left
-				data = m_pNameTables[1][address];
+				data = m_pNameTables[1][address & 0x03FF];
 			if (IS_IN_RANGE(address, 0x0C00, 0x0FFF))	// Bottom right
 				data = m_pNameTables[1][address & 0x03FF];
 		}
@@ -299,9 +282,9 @@ void RP2C02::WritePPU(WORD address, BYTE value)
 		if (m_pCartridge->UsedMirroring == MIRROR_VERTICAL)
 		{
 			if (IS_IN_RANGE(address, 0x0000, 0x03FF))	// Top left
-				m_pNameTables[0][address] = value;
+				m_pNameTables[0][address & 0x03FF] = value;
 			if (IS_IN_RANGE(address, 0x0400, 0x07FF))	// Top right
-				m_pNameTables[1][address] = value;
+				m_pNameTables[1][address & 0x03FF] = value;
 			if (IS_IN_RANGE(address, 0x0800, 0x0BFF))	// Bottom left
 				m_pNameTables[0][address & 0x03FF] = value;
 			if (IS_IN_RANGE(address, 0x0C00, 0x0FFF))	// Bottom right
@@ -310,11 +293,11 @@ void RP2C02::WritePPU(WORD address, BYTE value)
 		else if (m_pCartridge->UsedMirroring == MIRROR_HORIZONTAL)
 		{
 			if (IS_IN_RANGE(address, 0x0000, 0x03FF))	// Top left
-				m_pNameTables[0][address] = value;
+				m_pNameTables[0][address & 0x03FF] = value;
 			if (IS_IN_RANGE(address, 0x0400, 0x07FF))	// Top right
 				m_pNameTables[0][address & 0x03FF] = value;
 			if (IS_IN_RANGE(address, 0x0800, 0x0BFF))	// Bottom left
-				m_pNameTables[1][address] = value;
+				m_pNameTables[1][address & 0x03FF] = value;
 			if (IS_IN_RANGE(address, 0x0C00, 0x0FFF))	// Bottom right
 				m_pNameTables[1][address & 0x03FF] = value;
 		}

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <SDL.h>
 
 #include "../util.hpp"
@@ -83,7 +84,7 @@ private:
 		BYTE MSB = 0x00;
 	} m_oBgNextTileInfo;
 
-	struct  m_sShiftRegister
+	struct m_sShiftRegister
 	{
 		WORD PatternLo = 0x00;
 		WORD PatternHi = 0x00;
@@ -114,10 +115,10 @@ public:
 	// Connected stuff
 
 	// 2x 1KB nametables
-	BYTE** m_pNameTables;
+	std::array<std::array<BYTE, 1024>, 2> m_pNameTables;
 
 	// 32 Bytes of Palette info
-	BYTE* m_pPaletteTable;
+	std::array<BYTE, 32> m_pPaletteTable;
 
 private:
 	SDL_Renderer* m_pRenderer;
