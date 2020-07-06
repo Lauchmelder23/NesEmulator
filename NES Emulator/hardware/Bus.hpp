@@ -16,7 +16,7 @@ public:
 
 	Mos6502 m_oCPU;
 	RP2C02 m_oPPU;
-	Cartridge* m_pCartridge;
+	std::shared_ptr<Cartridge> m_pCartridge;
 private:
 	BYTE* m_pCPURAM;
 
@@ -25,7 +25,7 @@ public:
 	BYTE ReadCPU(WORD address, bool readOnly = false);
 
 public:
-	void InsertCartridge(Cartridge* cartridge);
+	void InsertCartridge(const std::shared_ptr<Cartridge>& cartridge);
 	void Reset();
 	void Clock();
 

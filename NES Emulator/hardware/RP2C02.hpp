@@ -103,13 +103,13 @@ public:
 	BYTE ReadPPU(WORD address, bool readonly = true);
 	void WritePPU(WORD address, BYTE value);
 
-	void InsertCartridge(Cartridge* cartridge);
+	void InsertCartridge(const std::shared_ptr<Cartridge>& cartridge);
 	void Tick();
 
 	SDL_Color& PatternPixelScreenColour(BYTE paletteID, BYTE pixelValue);
 
 public:
-	Cartridge* m_pCartridge;	
+	std::shared_ptr<Cartridge> m_pCartridge;	
 
 	// Connected stuff
 

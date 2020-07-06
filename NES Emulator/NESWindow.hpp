@@ -44,7 +44,7 @@ private:
 
 private:
 	Bus m_oNes;
-	Cartridge* m_pCartridge;
+	std::shared_ptr<Cartridge> m_pCartridge;
 
 	BYTE m_nSelectedPalette = 0x00;
 	bool m_bEmulate = false;

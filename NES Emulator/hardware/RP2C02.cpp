@@ -333,7 +333,7 @@ void RP2C02::WritePPU(WORD address, BYTE value)
 	}
 }
 
-void RP2C02::InsertCartridge(Cartridge* cartridge)
+void RP2C02::InsertCartridge(const std::shared_ptr<Cartridge>& cartridge)
 {
 	m_pCartridge = cartridge;
 }

@@ -7,7 +7,7 @@ bool NESWindow::OnCreate()
 {
 	try 
 	{
-		m_pCartridge = new Cartridge(m_pFilename);
+		m_pCartridge = std::make_shared<Cartridge>(m_pFilename);
 	}
 	catch (std::string e)
 	{
