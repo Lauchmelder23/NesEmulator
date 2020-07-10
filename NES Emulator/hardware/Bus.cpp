@@ -38,6 +38,9 @@ void Bus::WriteCPU(WORD address, BYTE data)
 	// Between 0x2000 and 0x3FFF we are accessing PPU registers
 	else if (IS_IN_RANGE(address, 0x2000, 0x3FFF))
 		m_oPPU.WriteCPU(address & 0x7, data);
+
+	else if (IS_IN_RANGE(address, 0x4016, 0x4017))
+		m_arrControllerShiftReg[address & 0x0001] = m_arrController[address & 0x0001];
 }
 
 BYTE Bus::ReadCPU(WORD address, bool readOnly /*= false*/)
@@ -53,6 +56,12 @@ BYTE Bus::ReadCPU(WORD address, bool readOnly /*= false*/)
 
 	else if (IS_IN_RANGE(address, 0x2000, 0x3FFF))
 		data = m_oPPU.ReadCPU(address & 0x7, readOnly);
+
+	else if (IS_IN_RANGE(address, 0x4016, 0x4017))
+	{
+		data = (m_arrControllerShiftReg[address & 0x0001] & 0x80) > 0;
+		m_arrControllerShiftReg[address & 0x0001] <<= 1;
+	}
 
 	return data;
 }

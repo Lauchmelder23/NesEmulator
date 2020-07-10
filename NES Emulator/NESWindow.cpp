@@ -80,6 +80,17 @@ bool NESWindow::OnEvent(const SDL_Event& event)
 
 bool NESWindow::OnUpdate(double frametime)
 {
+	m_oNes.m_arrController[0] = 0x00;
+	const BYTE* state = SDL_GetKeyboardState(NULL);
+	m_oNes.m_arrController[0] |= state[SDL_SCANCODE_COMMA] << 7;	// A
+	m_oNes.m_arrController[0] |= state[SDL_SCANCODE_PERIOD] << 6;	// B
+	m_oNes.m_arrController[0] |= state[SDL_SCANCODE_RETURN] << 5;	// Select
+	m_oNes.m_arrController[0] |= state[SDL_SCANCODE_RSHIFT] << 4;	// Start
+	m_oNes.m_arrController[0] |= state[SDL_SCANCODE_W] << 3;	// Up
+	m_oNes.m_arrController[0] |= state[SDL_SCANCODE_S] << 2;	// Down
+	m_oNes.m_arrController[0] |= state[SDL_SCANCODE_A] << 1;	// Left
+	m_oNes.m_arrController[0] |= state[SDL_SCANCODE_D] << 0;	// Right
+
 	if (m_bEmulate)
 	{
 		do { m_oNes.Clock(); } while (!m_oNes.m_oPPU.isFrameComplete);

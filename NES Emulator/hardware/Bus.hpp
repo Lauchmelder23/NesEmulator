@@ -18,6 +18,8 @@ public:
 	Mos6502 m_oCPU;
 	RP2C02 m_oPPU;
 	std::shared_ptr<Cartridge> m_pCartridge;
+
+	std::array<BYTE, 2> m_arrController;
 private:
 	BYTE* m_pCPURAM;
 
@@ -35,4 +37,6 @@ private:
 	uint64_t m_uClockCounter;
 
 	NESWindow* m_pParentWindow;
+
+	std::array<BYTE, 2> m_arrControllerShiftReg;
 };
