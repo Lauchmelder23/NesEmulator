@@ -128,6 +128,7 @@ BYTE RP2C02::ReadCPU(WORD address, bool readonly)
 	case 0x0003:	// OAMADDR
 		break;
 	case 0x0004:	// OAMDATA
+		data = m_pOAM[m_uOAMAddress];
 		break;
 	case 0x0005:	// PPUSCROLL
 		break;
@@ -168,9 +169,13 @@ void RP2C02::WriteCPU(WORD address, BYTE value)
 		break;
 
 	case 0x0003:	// OAMADDR
+		m_uOAMAddress = value;
 		break;
+
 	case 0x0004:	// OAMDATA
+		m_pOAM[m_uOAMAddress] = value;
 		break;
+
 	case 0x0005:	// PPUSCROLL
 		if (m_nAddressLatch == 0x00)
 		{
@@ -531,7 +536,7 @@ SDL_Texture* RP2C02::GetPatternTable(BYTE i, BYTE palette)
 
 				for (BYTE col = 0; col < 8; col++)
 				{
-					BYTE pixel = (tileLSB & 0x01) + (tileMSB & 0x01);
+					BYTE pixel = ((tileLSB & 0x01) << 1) | (tileMSB & 0x01);
 					tileLSB >>= 1;
 					tileMSB >>= 1;
 

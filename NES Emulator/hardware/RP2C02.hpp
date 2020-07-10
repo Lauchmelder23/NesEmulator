@@ -93,6 +93,19 @@ private:
 		WORD AttribHi = 0x00;
 	} m_oBgShiftRegister;
 
+	typedef union m_sOAMEntry
+	{
+		struct
+		{
+			BYTE YPos;
+			BYTE TileID;
+			BYTE Attribute;
+			BYTE XPos;
+		};
+
+		BYTE RAW[4];
+	} OAMEntry;
+
 public:
 	RP2C02();
 	~RP2C02();
@@ -120,6 +133,12 @@ public:
 
 	// 32 Bytes of Palette info
 	std::array<BYTE, 32> m_pPaletteTable;
+
+	// 64 OAM Entries
+	std::array<OAMEntry, 64> m_arrOAM;
+	BYTE* m_pOAM = reinterpret_cast<BYTE*>(m_arrOAM.data());
+
+	BYTE m_uOAMAddress = 0x00;
 
 private:
 	SDL_Renderer* m_pRenderer;

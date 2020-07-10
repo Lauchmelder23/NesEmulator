@@ -36,6 +36,12 @@ private:
 
 	uint64_t m_uClockCounter;
 
+	BYTE m_uDMAPage = 0x00;
+	BYTE m_uDMAByte = 0x00;
+	BYTE m_uDMAData = 0x00;
+	bool m_isDMA = false;
+	bool m_isDMAReady = false;
+
 	NESWindow* m_pParentWindow;
 
 	std::array<BYTE, 2> m_arrControllerShiftReg;

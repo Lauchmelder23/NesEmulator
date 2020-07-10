@@ -39,6 +39,13 @@ void Bus::WriteCPU(WORD address, BYTE data)
 	else if (IS_IN_RANGE(address, 0x2000, 0x3FFF))
 		m_oPPU.WriteCPU(address & 0x7, data);
 
+	else if (address == 0x4014)
+	{
+		m_uDMAPage = data;
+		m_uDMAByte = 0x00;
+		m_isDMA = true;
+	}
+
 	else if (IS_IN_RANGE(address, 0x4016, 0x4017))
 		m_arrControllerShiftReg[address & 0x0001] = m_arrController[address & 0x0001];
 }
@@ -83,7 +90,31 @@ void Bus::Clock()
 	m_oPPU.Tick();
 	if (m_uClockCounter % 3 == 0)
 	{
-		m_oCPU.Tick();
+		if (m_isDMA)
+		{
+			if (!m_isDMAReady)
+			{
+				m_isDMAReady = (m_oCPU.GetCycles() % 2 == 0);
+			}
+			else
+			{
+				if (m_oCPU.GetCycles() % 2 == 0)
+					m_uDMAData = ReadCPU((m_uDMAPage << 8) | m_uDMAByte);
+				else
+				{
+					m_oPPU.m_pOAM[m_uDMAByte++] = m_uDMAData;
+					if (m_uDMAByte == 0x00)
+					{
+						m_isDMAReady = false;
+						m_isDMA = false;
+					}
+				}
+			}
+		}
+		else
+		{
+			m_oCPU.Tick();
+		}
 
 #ifdef PRINT_INSTRUCTIONS
 		if (m_oCPU.Done())
