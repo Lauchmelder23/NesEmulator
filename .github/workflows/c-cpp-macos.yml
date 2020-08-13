@@ -1,0 +1,23 @@
+name: MacOS
+
+on:
+  push:
+    branches: [ development ]
+  pull_request:
+    branches: [ development ]
+
+jobs:
+  build:
+
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install SDL2
+      run: brew install sdl2
+    - name: submodules-init
+      uses: snickerbockers/submodules-init@v4
+    - name: run-cmake
+      uses: lukka/run-cmake@v2.5
+      with:
+        cmakeGenerator: UnixMakefiles

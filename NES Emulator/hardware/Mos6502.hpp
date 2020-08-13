@@ -1,9 +1,10 @@
 #pragma once
-#include <functional>
+#include <vector>
 #include <map>
 #include <sstream>
-
 #include "../util.hpp"
+
+
 
 ///////////////// Internal values for opcodes //////////////////
 #pragma region Opcodes
@@ -66,6 +67,31 @@
 #define UOP 0xFF
 #pragma endregion 
 
+// TODO: Implement
+#pragma region Illegal Opcodes
+#define ILL_JAM 0x38
+#define ILL_NOP 0x39
+#define ILL_SLO 0x40
+#define ILL_ANC 0x41
+#define ILL_RLA 0x42
+#define ILL_SRE 0x43
+#define ILL_ALR 0x44
+#define ILL_RRA 0x45
+#define ILL_ARR 0x46
+#define ILL_SAX 0x47
+#define ILL_XAA 0x48
+#define ILL_AHX 0x49
+#define ILL_TAS 0x50
+#define ILL_SHY 0x51
+#define ILL_SHX 0x52
+#define ILL_LAX 0x53
+#define ILL_DCP 0x54
+#define ILL_ISC 0x55
+#define ILL_SBC 0x56
+#define ILL_LAS 0x57
+#define ILL_AXS 0x58
+#pragma endregion
+
 ///////////////// Internal values for addressing modes /////////////////
 #pragma region AddrModes
 #define IMP 0x00
@@ -90,19 +116,19 @@ class Mos6502
 public:
 	typedef union Status
 	{
-		Status() {}
-		BYTE Raw = 0b00000000;
+		BYTE Raw;
 
 		struct sFlags
 		{
-			BYTE Carry : 1 = 0;
-			BYTE Zero : 1 = 0;
-			BYTE Interrupt : 1 = 0;
-			BYTE Decimal : 1 = 0;
-			BYTE Break : 1 = 0;
-			BYTE Unused : 1 = 0;
-			BYTE Overflow : 1 = 0;
-			BYTE Negative : 1 = 0;
+
+			BYTE Carry : 1;
+			BYTE Zero : 1;
+			BYTE Interrupt : 1;
+			BYTE Decimal : 1;
+			BYTE Break : 1;
+			BYTE Unused : 1;
+			BYTE Overflow : 1;
+			BYTE Negative : 1;
 		} Flag;
 
 		std::string AsString()
@@ -111,10 +137,11 @@ public:
 			ss << (Flag.Negative ? "N" : "n")
 				<< (Flag.Overflow ? "O" : "o")
 				<< (Flag.Unused ? "U" : "u")
-				<< (Flag.Break ? "B" : "b")
+				<< (Flag.Break ? "B" : "b") << " "
 				<< (Flag.Decimal ? "D" : "d")
 				<< (Flag.Interrupt ? "I" : "i")
-				<< (Flag.Zero ? "Z" : "z");
+				<< (Flag.Zero ? "Z" : "z")
+				<< (Flag.Carry ? "C" : "c");
 			return ss.str();
 		}
 	} Status;
@@ -122,13 +149,13 @@ public:
 	typedef BYTE AddressMode;
 	typedef BYTE Operation;
 
-	struct Instruction
+	typedef struct sInstruction
 	{
 		std::string name		= "";
 		Operation operation		= 0xFF;
 		AddressMode addressMode = 0xFF;
 		BYTE cycles = 0;
-	};
+	} Instruction;
 
 public:
 	Mos6502();
@@ -136,6 +163,7 @@ public:
 
 	void ConnectBus(Bus* bus) { m_pBus = bus; }
 	bool Done() { return (m_uCycles == 0); }
+	bool Halted() { return m_isHalted; }
 	
 	void Tick();
 	void Reset();
@@ -157,15 +185,19 @@ private:
 	void Write(WORD address, BYTE value);
 
 	bool Execute();
-	BYTE Fetch();
+	WORD GetAddress();
+	void Fetch();
 
 private:
 	Bus* m_pBus;
 
+	WORD m_uFetchedFrom;
 	BYTE m_uFetched;
 	bool m_bSwitchedPage;
 	BYTE m_uOpcode, m_uCycles;
 	uint64_t m_uCyclesTotal;
 
-	std::vector<Instruction> m_vecLookup;
+	bool m_isHalted;
+
+	std::vector<Mos6502::Instruction> m_vecLookup;
 };

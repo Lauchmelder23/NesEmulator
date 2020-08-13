@@ -1,0 +1,107 @@
+#include "Cartridge.hpp"
+
+#include <iostream>
+#include <fstream>
+#include <string.h>
+#include <sstream>
+
+#include "Mapper_000.hpp"
+#include "Mapper_001.hpp"
+
+Cartridge::Cartridge(const char* filename) :
+	m_vecCHRMemory{}, m_vecPRGMemory{}, m_pUsedMapper(nullptr)
+{
+	Header header;
+
+	std::ifstream ifs(filename, std::ios::binary);
+	if (!ifs.is_open())
+	{
+		std::stringstream ss;
+		char* buffer = new char[1024];	// Allocate 1024 characters for the error buffer
+		STRERROR(buffer, 1024, errno);
+		ss << "Failed to open file " << filename << ": " << buffer;
+		throw ss.str();
+	}
+
+	ifs.read(reinterpret_cast<char*>(&header), sizeof(Header));	// Naughty
+
+	// I dont care about trainer data
+	if (BIT_(2, header.MapperFlag1))
+		ifs.seekg(512, std::ios_base::cur);
+
+	m_uMapperID = ((header.MapperFlag1 & 0xF0) >> 4) | (header.MapperFlag2 & 0xF0);
+	UsedMirroring = (header.MapperFlag1 & 0x01) ? MIRROR_VERTICAL : MIRROR_HORIZONTAL;
+
+	// Read PRG memory
+	m_uPRGBanks = header.PRGsize;
+	m_vecPRGMemory.resize(0x4000 * (uint64_t)m_uPRGBanks);
+	ifs.read(reinterpret_cast<char*>(m_vecPRGMemory.data()), 0x4000 * (uint64_t)m_uPRGBanks);
+
+	// Read CHR memory
+	m_uCHRBanks = header.CHRsize;
+	m_vecCHRMemory.resize(0x2000 * (uint64_t)m_uCHRBanks);
+	ifs.read(reinterpret_cast<char*>(m_vecCHRMemory.data()), 0x2000 * (uint64_t)m_uCHRBanks);
+
+	switch (m_uMapperID)
+	{
+	case 0: m_pUsedMapper = std::make_unique<Mapper_000>(m_uPRGBanks, m_uCHRBanks); break;
+	case 1: m_pUsedMapper = std::make_unique<Mapper_001>(m_uPRGBanks, m_uCHRBanks); break;
+	}
+
+	if (m_pUsedMapper == nullptr)
+	{
+		std::stringstream ss;
+		ss << "This ROM uses a Mapper that this emulator doesn't (yet) support! Mapper ID is: " << (WORD)m_uMapperID;
+		throw ss.str();
+	}
+
+	ifs.close();
+}
+
+bool Cartridge::ReadCPU(WORD address, BYTE& value)
+{
+	WORD mappedAddress = 0;
+	if (m_pUsedMapper->MappedReadCPU(address, mappedAddress))
+	{
+		value = m_vecPRGMemory[mappedAddress];
+		return true;
+	}
+
+	return false;
+}
+
+bool Cartridge::WriteCPU(WORD address, BYTE value)
+{
+	WORD mappedAddress = 0;
+	if (m_pUsedMapper->MappedWriteCPU(address, mappedAddress))
+	{
+		m_vecPRGMemory[mappedAddress] = value;
+		return true;
+	}
+
+	return false;
+}
+
+bool Cartridge::ReadPPU(WORD address, BYTE& value)
+{
+	WORD mappedAddress = 0;
+	if (m_pUsedMapper->MappedReadPPU(address, mappedAddress))
+	{
+		value = m_vecCHRMemory[mappedAddress];
+		return true;
+	}
+
+	return false;
+}
+
+bool Cartridge::WritePPU(WORD address, BYTE value)
+{
+	WORD mappedAddress = 0;
+	if (m_pUsedMapper->MappedWritePPU(address, mappedAddress))
+	{
+		m_vecCHRMemory[mappedAddress] = value;
+		return true;
+	}
+
+	return false;
+}

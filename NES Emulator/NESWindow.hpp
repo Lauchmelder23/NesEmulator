@@ -3,6 +3,13 @@
 #include <SDL.h>
 #include <SDLF.hpp>
 #include <sstream>
+#include <memory>
+
+#include "../editme.hpp"
+
+#ifdef LOG_INSTRUCTIONS
+#include <fstream>
+#endif
 
 #include "Bus.hpp"
 
@@ -10,135 +17,42 @@
 #define SCREEN_HEIGHT 240
 #define SCALE 3
 
+#define HEIGHT_PER_LINE 20
+
 class NESWindow : public sf::IWindow
 {
 public:
-	NESWindow() :
-		IWindow(sf::Vec2u(SCREEN_WIDTH, SCREEN_HEIGHT) * SCALE, sf::Vec2i(100, 100), "NESemu", 
+	NESWindow(const char* filename) :
+		IWindow(sf::Vec2u(SCREEN_WIDTH, SCREEN_HEIGHT)* SCALE + sf::Vec2u(100, 100), sf::Vec2i(100, 100), "NESemu",
 			SDL_WINDOW_SHOWN, SDL_RENDERER_TARGETTEXTURE),
-		m_pTexture(nullptr)
+		m_pCartridge(nullptr), m_pFilename(filename), m_oNes(this)
 	{
-
+		
 	}
+
+	SDL_Renderer* GetRenderer() { return m_pRenderer; }
+	void PrintCurrentInstruction();
 
 private:
-	virtual bool OnCreate() override
-	{
-		// Create the NES screen
-		m_pTexture = SDL_CreateTexture(m_pRenderer, SDL_PIXELFORMAT_RGB888, 
-			SDL_TextureAccess::SDL_TEXTUREACCESS_TARGET, SCREEN_WIDTH, SCREEN_HEIGHT);
+	virtual bool OnCreate() override;
+	virtual bool OnEvent(const SDL_Event& event) override;
+	virtual bool OnUpdate(double frametime) override;
+	virtual void OnRender(SDL_Renderer* renderer) override;
+	virtual void OnClose() override;
 
-		if (m_pTexture == nullptr)
-			return false;
-
-		m_pScreen = new SDL_Rect;
-		m_pScreen->x = 10;
-		m_pScreen->y = 10;
-		m_pScreen->w = SCREEN_WIDTH * SCALE;
-		m_pScreen->h = SCREEN_HEIGHT * SCALE;
-
-		// Feed in some dummy byte code for testing
-		// TODO: Remove
-		std::stringstream ss;
-		ss << "A2 0A 8E 00 00 A2 03 8E 01 00 AC 00 00 A9 00 18 6D 01 00 88 D0 FA 8D 02 00 EA EA EA";
-		WORD offset = 0x8000;
-		while (!ss.eof())
-		{
-			std::string b;
-			ss >> b;
-			m_oNes.Write(offset++, static_cast<BYTE>(std::stoul(b, nullptr, 16)));
-		}
-
-		// Disassemble the program
-		m_mapDisassemble = m_oNes.m_oCPU.Disassemble(0x8000, 0x9000);
-
-		// Set reset vectors
-		m_oNes.Write(0xFFFC, 0x00);
-		m_oNes.Write(0xFFFD, 0x80);
-
-		// Boot the NES
-		m_oNes.m_oCPU.Reset();
-
-		return true;
-	}
-
-
-
-
-
-	virtual bool OnEvent(const SDL_Event& event)
-	{
-		if (event.type == SDL_KEYDOWN)
-		{
-			if(event.key.keysym.scancode == SDL_SCANCODE_SPACE)
-			{
-				auto disas = m_mapDisassemble.find(m_oNes.m_oCPU.m_uPC);
-				if (disas != m_mapDisassemble.end())
-					std::cout << "(" << m_oNes.m_oCPU.GetCycles() << ") "
-					<< disas->second << "\t\t"
-					<< "A=" << (WORD)m_oNes.m_oCPU.m_uAcc << ", "
-					<< "X=" << (WORD)m_oNes.m_oCPU.m_uX << ", "
-					<< "Y=" << (WORD)m_oNes.m_oCPU.m_uY << ", "
-					<< "S=" << (WORD)m_oNes.m_oCPU.m_uSP << ", "
-					<< "F=" << m_oNes.m_oCPU.m_oStatus.AsString() << std::endl;
-
-				try {
-					do
-					{
-						m_oNes.m_oCPU.Tick();
-					} while (!m_oNes.m_oCPU.Done());
-				}
-				catch (const char* s)
-				{
-					std::cerr << s << std::endl;
-					m_atomWindowOpen = false;
-				}
-			}
-
-			if (event.key.keysym.scancode == SDL_SCANCODE_R)
-				m_oNes.m_oCPU.Reset();
-
-
-			if (event.key.keysym.scancode == SDL_SCANCODE_I)
-				m_oNes.m_oCPU.IRQ();
-
-
-			if (event.key.keysym.scancode == SDL_SCANCODE_N)
-				m_oNes.m_oCPU.NMI();	
-		}
-
-		return true;
-	}
-
-
-
-
-
-	virtual void OnRender(SDL_Renderer* renderer) override
-	{
-		// Set Render target to the texture
-		SDL_SetRenderTarget(m_pRenderer, m_pTexture);
-
-		// Clear the texture
-		SDL_SetRenderDrawColor(m_pRenderer, 0, 0, 0, 255);
-		SDL_RenderClear(m_pRenderer);
-
-		// Set render target back to window
-		SDL_SetRenderTarget(m_pRenderer, NULL);
-
-		// Copy texture to window
-		SDL_RenderCopy(m_pRenderer, m_pTexture, NULL, m_pScreen);
-	}
-
-	virtual void OnClose() override 
-	{
-		SDL_DestroyTexture(m_pTexture);
-	}
+	void RenderPatternTables();
+	void RenderPalettes();
 
 private:
-	SDL_Texture* m_pTexture;
-	SDL_Rect* m_pScreen;
 	Bus m_oNes;
+	std::shared_ptr<Cartridge> m_pCartridge;
+
+	BYTE m_nSelectedPalette = 0x00;
+	bool m_bEmulate = false;
+	const char* m_pFilename;
 
 	std::map<WORD, std::string> m_mapDisassemble;
+#ifdef LOG_INSTRUCTIONS
+	std::ofstream file;
+#endif
 };
